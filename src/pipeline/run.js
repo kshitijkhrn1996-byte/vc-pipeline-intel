@@ -1,12 +1,17 @@
 // The run: collect live signals → validate → Gemini classifies → score →
 // action → draft → write ONLY the four signal columns (via apply_signal).
 // Works in chunks under a time budget so it can resume on the next call.
-import { db, q } from './db.js';
-import { newsItems, blogItems, searchItems } from './sources.js';
-import { classifyVc, draftEmails } from './gemini.js';
-import { validateItems } from '../src/validate.js';
-import { itemPoints, scoreVc, decideAction, DRAFT_ACTIONS } from '../src/scoring.js';
-import { todayIst } from './config.js';
+import { db, q } from '../db/client.js';
+import { newsItems } from '../sources/google-news.js';
+import { blogItems } from '../sources/blog-rss.js';
+import { searchItems } from '../sources/web-search.js';
+import { classifyVc } from '../ai/classify.js';
+import { draftEmails } from '../ai/draft-email.js';
+import { validateItems, normaliseTitle } from '../core/validate.js';
+import { itemPoints, scoreVc } from '../core/scoring.js';
+import { decideAction, DRAFT_ACTIONS } from '../core/actions.js';
+import { todayIst } from '../config.js';
+import { sendDigest } from '../notify/digest.js';
 
 const CHUNK = 10;            // VCs processed end-to-end per step
 const PARALLEL = 5;          // concurrent VCs within a chunk (feeds + Gemini)
@@ -41,9 +46,19 @@ async function pendingVcs(runId, force) {
   return vcs.filter((v) => !done.has(v.id));
 }
 
-async function feedItems(vc, today) {
+// Signals Vikram marked "not relevant" on the dashboard never count again for that VC.
+async function loadRejected() {
+  const rows = await q(db.from('signal_feedback').select('vc_id, url, title').eq('verdict', 'not_relevant'));
+  const set = new Set();
+  for (const r of rows) { set.add(`${r.vc_id}|${r.url}`); if (r.title) set.add(`${r.vc_id}|${normaliseTitle(r.title)}`); }
+  return set;
+}
+const notRejected = (vc, rejected) => (it) =>
+  !rejected.has(`${vc.id}|${it.url}`) && !rejected.has(`${vc.id}|${normaliseTitle(it.title)}`);
+
+async function feedItems(vc, today, rejected) {
   const [news, blog] = await Promise.all([newsItems(vc), blogItems(vc)]);
-  return validateItems([...blog, ...news], today).slice(0, 15);
+  return validateItems([...blog, ...news], today).filter(notRejected(vc, rejected)).slice(0, 15);
 }
 
 async function classify(vc, items, today) {
@@ -70,14 +85,14 @@ function summarise(kept, sources, found) {
 }
 
 // Collect + classify one VC. Returns null if Gemini failed, so the VC stays pending for the next call.
-export async function assess(vc, today) {
+export async function assess(vc, today, rejected = new Set()) {
   const sources = ['news', ...(vc.blog_rss ? ['blog'] : [])];
   try {
-    let items = await feedItems(vc, today);
+    let items = await feedItems(vc, today, rejected);
     let kept = await classify(vc, items, today);
     if (!kept.length) {                 // feeds had nothing about this VC: try grounded web search
       sources.push('search');
-      const found = validateItems(await searchItems(vc, today).catch(() => []), today);
+      const found = validateItems(await searchItems(vc, today).catch(() => []), today).filter(notRejected(vc, rejected));
       kept = await classify(vc, found, today);
       items = [...items, ...found];
     }
@@ -91,8 +106,8 @@ export async function assess(vc, today) {
   }
 }
 
-async function processChunk(run, vcs, today) {
-  const results = (await pool(vcs, PARALLEL, (vc) => assess(vc, today))).filter(Boolean);
+async function processChunk(run, vcs, today, rejected) {
+  const results = (await pool(vcs, PARALLEL, (vc) => assess(vc, today, rejected))).filter(Boolean);
 
   // Outreach drafts for the VCs worth contacting now.
   const toDraft = results.filter((r) => DRAFT_ACTIONS.has(r.action.code)).map((r) => ({
@@ -138,10 +153,11 @@ export async function runPipeline({ trigger = 'manual', runId = null, force = fa
 
   try {
     const pending = await pendingVcs(run.id, force);
+    const rejected = await loadRejected();
     let checked = 0, found = 0;
     for (const chunk of chunks(pending, CHUNK)) {
       if (Date.now() - started > budgetMs) break;
-      const res = await processChunk(run, chunk, today);
+      const res = await processChunk(run, chunk, today, rejected);
       checked += res.length;
       found += res.reduce((s, r) => s + r.kept.length, 0);
     }
@@ -154,9 +170,41 @@ export async function runPipeline({ trigger = 'manual', runId = null, force = fa
       status: remaining ? 'partial' : 'done',
       finished_at: new Date().toISOString(),
     }).eq('id', run.id));
+    // Scheduled runs email Vikram the brief once the whole pipeline is done.
+    if (!remaining && run.trigger === 'cron') await sendDigest(run.id).catch((e) => console.error('digest:', e.message));
     return { run_id: run.id, checked, signals: found, remaining, notes_untouched: hashAfter === run.protected_hash_before };
   } catch (err) {
     await db.from('signal_runs').update({ status: 'failed', error: String(err.message || err), finished_at: new Date().toISOString() }).eq('id', run.id);
     throw err;
   }
+}
+
+// Check specific VCs right away (a newly added VC), as a small run of its own.
+export async function checkVcs(vcIds) {
+  const today = todayIst();
+  const run = await startRun('single');
+  const vcs = await q(db.from('vcs').select('*').in('id', vcIds));
+  const res = await processChunk(run, vcs, today, await loadRejected());
+  const hashAfter = await q(db.rpc('protected_hash'));
+  await q(db.from('signal_runs').update({
+    vcs_checked: res.length, signals_found: res.reduce((s, r) => s + r.kept.length, 0),
+    protected_hash_after: hashAfter, status: 'done', finished_at: new Date().toISOString(),
+  }).eq('id', run.id));
+  return { run_id: run.id, checked: res.length };
+}
+
+// After Vikram changes his status or last contact, re-decide the action from the
+// latest score (no new fetch), still writing only through apply_signal().
+export async function reapplyAction(vcId) {
+  const today = todayIst();
+  const [vc] = await q(db.from('vcs').select('*').eq('id', vcId));
+  const [check] = await q(db.from('vc_checks').select('*').eq('vc_id', vcId).order('checked_at', { ascending: false }).limit(1));
+  if (!vc || !check) return null;
+  const action = decideAction({ score: check.score ?? 0, status: vc.status, lastContact: vc.last_contact }, today);
+  await q(db.rpc('apply_signal', {
+    p_vc_id: vc.id, p_last_signal_date: vc.last_signal_date, p_summary: vc.signal_summary,
+    p_score: check.score ?? 0, p_action: action.label,
+  }));
+  await q(db.from('vc_checks').update({ action_code: action.code }).eq('id', check.id));
+  return action;
 }

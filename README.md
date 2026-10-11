@@ -1,72 +1,89 @@
-# VC Pipeline Intelligence
+# Pipeline Radar · VC fundraising pipeline intelligence
 
-MESA Cohort C4 · AI and its Applications, Section 1 Final · "VC Fundraising Pipeline Intelligence" (High difficulty).
+**Live:** https://vc-pipeline-intel.vercel.app · MESA Cohort C4, AI and its Applications, Section 1 Final (High difficulty)
 
-Vikram is raising Seed for a B2B logistics SaaS and tracks 50 VCs. Twice a week, before he works his pipeline, this system
-checks each VC's public activity from the last 30 days, scores how receptive they are likely to be right now, recommends an
-action, and drafts the outreach email. It updates **only** the four signal columns of his Supabase table and never touches
-his notes or contact history.
+![Pipeline Radar dashboard](docs/dashboard.png)
 
-## How it works
+Vikram is raising a Seed round for a B2B logistics SaaS and tracks 50 VCs. Twice a week, before he works his pipeline,
+Pipeline Radar checks what each VC did, wrote, said or invested in during the last 30 days, scores how receptive they are
+right now, recommends an action, drafts the email, and emails him the brief. It updates **only** the four signal columns
+of his Supabase table and never touches his notes or contact history.
 
-```
-Vercel Cron (Mon & Thu, 6:30 + 8:30 IST)  ─┐     Dashboard "Run now" ─┐
-                                           ▼                          ▼
-                                   /api/run  (chunked, resumable, 240 s budget per call)
-                                           │
-   Supabase vcs (read) ─► collectors: Google News RSS (partner + firm deals) · firm blog RSS
-                          · Gemini + Google Search grounding when the feeds find nothing (URL must load)
-                       ─► validator: real URL, dated, inside 30 days, de-duplicated
-                       ─► Gemini Flash (JSON schema): about this VC? type · relevance 0-3 · summary · event id
-                       ─► scoring (src/scoring.js): type × relevance × recency, one count per event, off-topic capped
-                       ─► action rules: score × Vikram's status × days since last contact
-                       ─► Gemini Flash: email drafts for "Reach out now" / "Nudge now"
-                       ─► apply_signal() RPC: writes ONLY last_signal_date, signal_summary, follow_up_score, recommended_action
-                       ─► vc_checks (drafts, sources), signals (evidence links), signal_runs (notes fingerprint before/after)
-Dashboard (public/index.html + /api/vcs) ◄─ ranked list · evidence · quiet list · drafts → Gmail · editable notes
-```
+## How each requirement is met
 
-## Protecting Vikram's notes
-
-1. **Code:** the pipeline never updates `vcs` directly. Its only write is the `apply_signal()` Postgres function.
-2. **Database:** `apply_signal()` sets only the four signal columns. A `BEFORE UPDATE` trigger raises an error if a
-   pipeline write changes any of Vikram's columns.
-3. **Proof:** each run stores an MD5 fingerprint of Vikram's columns before and after (`protected_hash()`). The dashboard
-   shows "✓ untouched" when they match.
-
-## Layout
-
-| Path | What |
+| Requirement | How |
 |---|---|
-| `api/run.js` | Cron + manual run endpoint |
-| `api/vcs.js` | Dashboard data; Vikram's edits (whitelisted columns only) |
-| `api/status.js` | Live progress of the current run (dashboard progress bar) |
-| `lib/sources.js`, `lib/rss.js` | Live collectors: Google News, blog RSS, Gemini search grounding |
-| `lib/gemini.js` | Classification and email drafts (Gemini Flash, structured output) |
-| `lib/pipeline.js` | The run: collect → validate → classify → score → act → draft → write |
-| `src/scoring.js`, `src/validate.js` | Deterministic scoring, action rules, evidence validation (unit-tested) |
-| `sql/schema.sql` | Tables, guard trigger, `apply_signal()`, `protected_hash()` |
-| `data/vcs.json`, `scripts/seed.js` | 50 researched VCs; seed with fictional relationship history |
-| `public/index.html` | Dashboard: weekly brief, priority queue with evidence, drafts, run proof, editable pipeline |
-| `docs/` | Components Map (docx + png), dashboard screenshot |
+| Live external data | Google News RSS (partner + firm deals), each firm's blog/Medium/Substack RSS, and Gemini with Google Search grounding as a fallback. |
+| An observable signal from the past 30 days, with the reason | Every signal must have a real link and a date inside the window ([`src/core/validate.js`](src/core/validate.js)); the dashboard shows each one with its link. |
+| Tell him about the quiet VCs too | VCs without a relevant signal are listed as "Quiet: skip this week", with the sources checked. |
+| Twice a week, before he starts | Vercel Cron, Mon & Thu 6:30 am IST (+ 8:30 am catch-up). The brief is emailed to him from his own Gmail. |
+| Supabase reflects the current state each run | Every run updates all VCs; a run that hits the time limit resumes where it stopped. |
+| Never overwrite his notes; update only 4 columns | `apply_signal()` is the pipeline's only write path; a trigger rejects any pipeline write to his columns; every run fingerprints his columns before and after. |
+| Gemini Flash for all AI | Item classification, relevance, summaries and email drafts. No other model. |
 
-## Run
+## Features
+
+- **Weekly brief:** the plan in one sentence, all VCs by action, and what changed since the last run (newly actionable, heating up, went quiet).
+- **Priority queue:** evidence per VC (type, relevance, link, "4 outlets" when several cover one deal), a 30-day signal strip and a score sparkline.
+- **Email drafts:** open with the VC's specific signal; Open in Gmail, Copy, then **Mark as sent** (status → waiting, last contact → today, history line added, action → hold).
+- **Feedback loop:** 👍/👎 on any signal. 👎 removes it from future runs for that VC; the ratings give a live accuracy figure.
+- **Pipeline management:** add a VC (checked within seconds), import Vikram's spreadsheet as CSV, export CSV, edit his own columns.
+- **Run proof:** which columns a run writes and never writes, and a "notes safe" check on every run.
+
+## Architecture
+
+![Components Map](docs/components-map.png)
+
+```
+api/                      Vercel functions (thin: auth → src → JSON)
+  run.js                  cron + "Run now"; resumable under a 240 s budget
+  vcs.js                  list / add / edit VCs (Vikram's columns only)
+  actions.js              mark sent · feedback · CSV import · send / preview digest
+  status.js               live run progress
+src/
+  core/                   pure, unit-tested logic: scoring, actions, validate, changes
+  sources/                google-news, blog-rss, web-search (Gemini grounding), rss parser
+  ai/                     gemini-client, classify, draft-email
+  pipeline/run.js         collect → validate → classify → score → act → draft → apply_signal()
+  notify/digest.js        the Mon/Thu brief email
+  db/client.js · http.js · config.js
+public/                   dashboard (index.html, app.js, styles.css)
+supabase/migrations/      schema, guard trigger, apply_signal(), protected_hash()
+apps-script/              DigestMailer.gs: sends the brief from Vikram's Gmail
+test/unit/                scoring, actions, validation, change detection
+docs/                     Components Map (docx, png), screenshots
+```
+
+### Scoring
+
+Each event earns up to 40 points: type (deal 1.0, post 0.8, event 0.7, interview 0.6) × relevance (logistics 1.0, B2B SaaS 0.6,
+general 0.15, off-topic 0.05) × recency (full for 7 days, fading to zero at 30). Several outlets covering one event count once;
+off-topic activity adds at most 15. **Reach out** at 30+; a pending reply is never chased within 10 days of the last contact.
+
+## Setup
 
 ```bash
 npm install
-npm test
-node --env-file=.env scripts/dry-run.js "Prime Venture" "Blume"
+cp .env.example .env          # fill in the keys
+npm test                      # unit tests
+npm run seed                  # writes supabase/seed.sql from data/vcs.json
+npm run dry-run -- "Peak XV"  # live check of one VC, writes nothing
+npm run pipeline              # full run from your machine
 npx vercel deploy --prod
 ```
 
-Env: `GEMINI_API_KEY`, `GEMINI_MODEL` (gemini-3.5-flash), `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `DASHBOARD_KEY`, `CRON_SECRET`.
-Optional: `FOUNDER_NAME`, `COMPANY_NAME`, `COMPANY_PITCH`.
+1. Create a Supabase project and run `supabase/migrations/*.sql` in order, then `supabase/seed.sql`.
+2. Set the variables from `.env.example` in Vercel.
+3. **Digest email:** open [script.google.com](https://script.google.com), paste `apps-script/DigestMailer.gs`, add a script property
+   `DIGEST_SECRET` (same value as Vercel), deploy as a web app (Execute as: Me, Access: Anyone), and put the `/exec` URL in
+   `DIGEST_WEBHOOK_URL`. "Email me this brief" on the dashboard sends a test.
 
 ## Assumptions and limits
 
-- "Worth reaching out" = follow-up score ≥ 30, which needs at least one logistics/B2B-relevant signal. Off-topic activity adds at most 15.
-- Don't nudge a pending reply until 10 days after last contact.
-- Firm-level deals count as signals for the partner, and are labelled "firm signal".
-- LinkedIn and X posts are not covered (no free API; scraping breaks their terms). News, firm blogs and web search are.
+- Thresholds (30 to reach out, 10 days before a nudge) live in [`src/core/actions.js`](src/core/actions.js).
+- A deal by the firm counts as a signal for the partner on the list, labelled "Firm activity".
 - Investor-database pages (Tracxn, Crunchbase, …) are filtered out: they list old rounds, not something the VC did.
-- VC contact emails are firm-level public addresses only; personal addresses were deliberately not collected.
+- LinkedIn and X posts are not covered (no free API; scraping breaks their terms).
+- VC emails are public firm-level addresses only. Vikram's status, history and notes in the seed data are fictional.
+
+MIT licence.

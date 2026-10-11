@@ -4,3 +4,6 @@ node_modules
 
 .vercel
 .env*
+
+# CI workflow: push needs a token with the workflow scope
+.github/

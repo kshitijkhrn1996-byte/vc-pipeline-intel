@@ -4,9 +4,17 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test"
+    "test": "node --test",
+    "pipeline": "node --env-file=.env scripts/run-once.js",
+    "dry-run": "node --env-file=.env scripts/dry-run.js",
+    "seed": "node scripts/seed.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.117.3"
-  }
+  },
+  "description": "VC fundraising pipeline intelligence: live 30-day VC signals, Gemini Flash scoring, guarded Supabase updates, Vercel dashboard.",
+  "engines": {
+    "node": ">=20"
+  },
+  "license": "MIT"
 }

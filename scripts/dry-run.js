@@ -1,8 +1,8 @@
 // Live collection + Gemini classification + scoring for a few VCs. Reads VCs from Supabase, writes nothing.
 // Usage: node --env-file=.env scripts/dry-run.js "Peak XV" "Schematic"
-import { db, q } from '../lib/db.js';
-import { assess } from '../lib/pipeline.js';
-import { todayIst } from '../lib/config.js';
+import { db, q } from '../src/db/client.js';
+import { assess } from '../src/pipeline/run.js';
+import { todayIst } from '../src/config.js';
 
 const today = todayIst();
 const vcs = (await q(db.from('vcs').select('*').order('id')))

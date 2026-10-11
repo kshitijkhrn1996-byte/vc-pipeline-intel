@@ -36,14 +36,15 @@ svg.wires { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1;
   <div class="actor">Founder<small>(Vikram)</small></div>
   <div class="cell r1"><div class="box violet" id="manual"><b>Clicks "Run now"</b>on the dashboard (optional)</div></div>
   <div class="cell r1"></div>
-  <div class="cell r1"><div class="box blue" id="edit"><b>Edits his own columns</b>status, last contact, contact history, notes<small>never written by the pipeline</small></div></div>
+  <div class="cell r1"><div class="box blue" id="edit"><b>His own actions</b>edits notes &amp; status, adds / imports VCs, marks emails sent, rates signals 👍/👎<small>👎 signals are excluded from future runs</small></div></div>
   <div class="cell r1"></div><div class="cell r1"></div>
   <div class="cell r1"><div class="box red" id="dash"><b>Dashboard</b>Reach out now · Nudge · Quiet lists, evidence links, follow-up score, Gmail-ready drafts<small>vc-pipeline-intel.vercel.app</small></div></div>
 
   <!-- Scheduler -->
   <div class="actor">Scheduler<small>(Vercel Cron)</small></div>
   <div class="cell r2"><div class="box violet" id="cron"><b>Twice a week</b>Mon &amp; Thu, 6:30 am IST<small>+ 8:30 am catch-up run</small></div></div>
-  <div class="cell r2"></div><div class="cell r2"></div><div class="cell r2"></div><div class="cell r2"></div><div class="cell r2"></div>
+  <div class="cell r2"></div><div class="cell r2"></div><div class="cell r2"></div><div class="cell r2"></div>
+  <div class="cell r2"><div class="box red" id="mail"><b>Brief emailed</b>Mon &amp; Thu: who to reach out to, nudge, and who is quiet<small>Apps Script → his Gmail</small></div></div>
 
   <!-- Backend -->
   <div class="actor">System<small>(Vercel functions)</small></div>
@@ -102,6 +103,8 @@ wire([[ai.cx - 30, ai.t], [ai.cx - 30, score.cy], [score.r, score.cy]]);
 wire([[score.cx, score.b], [score.cx, draft.cy], [draft.l, draft.cy]]);
 wire([[draft.r, draft.cy], [mx(draft, write), draft.cy], [mx(draft, write), write.t - 14], [write.cx, write.t - 14], [write.cx, write.t]]);
 wire([[write.r - 16, write.t], [write.r - 16, dash.b]]);
+const mail = R('mail');
+wire([[write.l + 16, write.t], [write.l + 16, mail.b]]);
 wire([[src.cx + 40, src.b], [src.cx + 40, ground.t]], true);
 wire([[ground.l + 14, ground.t], [ground.l + 14, ground.t - 20], [val.l - 16, ground.t - 20], [val.l - 16, val.cy], [val.l, val.cy]], true);
 </script>

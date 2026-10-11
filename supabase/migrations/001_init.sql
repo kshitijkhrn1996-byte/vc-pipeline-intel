@@ -65,9 +65,7 @@ create table if not exists signals (
   published   date not null,
   relevance   int not null check (relevance between 0 and 3),
   summary     text,
-  points      numeric,
-  event       text,             -- same id = several outlets covering one event
-  about       text              -- partner | firm
+  points      numeric
 );
 create index if not exists signals_vc_idx on signals (vc_id, run_id);
 create index if not exists vc_checks_vc_idx on vc_checks (vc_id, checked_at desc);

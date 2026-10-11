@@ -1,6 +1,6 @@
-// Builds sql/seed.sql from data/vcs.json, adding Vikram's (fictional) relationship
+// Builds supabase/seed.sql from data/vcs.json, adding Vikram's (fictional) relationship
 // columns: status, last contact, contact history and notes.
-// Usage: node scripts/seed.js   → then run sql/seed.sql in Supabase.
+// Usage: node scripts/seed.js   → then run supabase/seed.sql in Supabase.
 import { readFileSync, writeFileSync } from 'node:fs';
 
 const vcs = JSON.parse(readFileSync(new URL('../data/vcs.json', import.meta.url)));
@@ -31,7 +31,7 @@ const rows = vcs.map((vc, i) => {
   return `(${[vc.name, vc.firm, vc.thesis, vc.email, vc.website, vc.blog_rss, status, last, hist, fullNotes].map(sql).join(', ')})`;
 });
 
-writeFileSync(new URL('../sql/seed.sql', import.meta.url),
+writeFileSync(new URL('../supabase/seed.sql', import.meta.url),
   `insert into vcs (name, firm, thesis, email, website, blog_rss, status, last_contact, contact_history, notes) values\n` +
   rows.join(',\n') + `\non conflict (name, firm) do nothing;\n`);
-console.log(`wrote ${rows.length} rows to sql/seed.sql`);
+console.log(`wrote ${rows.length} rows to supabase/seed.sql`);

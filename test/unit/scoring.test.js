@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { recencyFactor, itemPoints, scoreVc, decideAction } from '../src/scoring.js';
-import { validateItems } from '../src/validate.js';
+import { recencyFactor, itemPoints, scoreVc } from '../../src/core/scoring.js';
+import { decideAction } from '../../src/core/actions.js';
+import { validateItems } from '../../src/core/validate.js';
 
 const today = '2026-10-11';
 

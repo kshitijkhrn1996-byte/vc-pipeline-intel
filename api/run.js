@@ -1,7 +1,7 @@
 // Runs the signal pipeline.
 //   Vercel Cron:  GET  /api/run              (Authorization: Bearer CRON_SECRET)
 //   Dashboard:    POST /api/run?key=KEY      body {run_id?}  → forced full refresh, resumable
-import { runPipeline } from '../lib/pipeline.js';
+import { runPipeline } from '../src/pipeline/run.js';
 
 export const config = { maxDuration: 300 };
 
