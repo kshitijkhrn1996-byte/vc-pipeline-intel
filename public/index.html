@@ -2,281 +2,647 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>VC Pipeline Intelligence</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pipeline Radar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
+/* Layout: a navy "Monday brief" band (the week's plan + run control), then a priority queue
+   with a right rail (run proof, signal mix, scoring rules), then the full editable pipeline. */
 :root {
   color-scheme: light;
-  --page: #f7f7f4; --surface: #ffffff; --ink: #111110; --ink-2: #4f4e4a; --muted: #85837c;
-  --line: #e4e3dc; --ring: rgba(17,17,16,0.08);
-  --accent: #2a62d6; --accent-ink: #ffffff;
-  --go: #0b8a3e; --go-bg: #e6f5ec; --nudge: #a35d00; --nudge-bg: #fdf1dc;
-  --hold: #5b5bd6; --hold-bg: #ececfd; --quiet: #85837c; --quiet-bg: #efeee9; --bad: #c43a3a;
+  --bg: #f2f4f8; --surface: #ffffff; --surface-2: #eceff5; --ink: #0e1a2e; --ink-2: #47536a; --muted: #77839a;
+  --line: #dce1ea; --accent: #2747d6; --accent-soft: #e4e9fd; --accent-ink: #ffffff;
+  --band: #13294b; --band-ink: #ffffff; --band-2: #b9c6e0; --band-line: rgba(255,255,255,.14);
+  --go: #0d8048; --go-bg: #e0f4e9; --nudge: #a95b06; --nudge-bg: #fcefd8;
+  --hold: #5545c4; --hold-bg: #ebe8fb; --quiet: #67728a; --quiet-bg: #e9ecf1; --bad: #c0352b; --bad-bg: #fbe6e4;
+  --rel3: #2747d6; --rel2: #7d93ec; --rel1: #c9d3f6;
+  --shadow: 0 1px 2px rgba(14,26,46,.05), 0 4px 16px rgba(14,26,46,.05);
+  --f-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --f-body: "IBM Plex Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     color-scheme: dark;
-    --page: #0f0f0e; --surface: #1a1a18; --ink: #f3f2ee; --ink-2: #c3c1b8; --muted: #8d8b83;
-    --line: #2d2d2a; --ring: rgba(255,255,255,0.08);
-    --accent: #5b8ff0; --go: #3ccf74; --go-bg: #12301f; --nudge: #f0a542; --nudge-bg: #33260f;
-    --hold: #9d9df5; --hold-bg: #22224a; --quiet: #9a988f; --quiet-bg: #242421; --bad: #f07272;
+    --bg: #0a111e; --surface: #111a2b; --surface-2: #172238; --ink: #e7ecf5; --ink-2: #aab5ca; --muted: #7c879d;
+    --line: #233049; --accent: #7d97ff; --accent-soft: #1d2a4f; --accent-ink: #0a111e;
+    --band: #0e1a33; --band-ink: #f1f4fb; --band-2: #a3b1cf; --band-line: rgba(255,255,255,.10);
+    --go: #45d08f; --go-bg: #0f2c1f; --nudge: #f2a64a; --nudge-bg: #33240e;
+    --hold: #a69bff; --hold-bg: #221d47; --quiet: #98a2b6; --quiet-bg: #1b2436; --bad: #f2786d; --bad-bg: #3a1714;
+    --rel3: #7d97ff; --rel2: #4b5fa8; --rel1: #2a3760;
+    --shadow: 0 1px 2px rgba(0,0,0,.3);
   }
 }
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0a111e; --surface: #111a2b; --surface-2: #172238; --ink: #e7ecf5; --ink-2: #aab5ca; --muted: #7c879d;
+  --line: #233049; --accent: #7d97ff; --accent-soft: #1d2a4f; --accent-ink: #0a111e;
+  --band: #0e1a33; --band-ink: #f1f4fb; --band-2: #a3b1cf; --band-line: rgba(255,255,255,.10);
+  --go: #45d08f; --go-bg: #0f2c1f; --nudge: #f2a64a; --nudge-bg: #33240e;
+  --hold: #a69bff; --hold-bg: #221d47; --quiet: #98a2b6; --quiet-bg: #1b2436; --bad: #f2786d; --bad-bg: #3a1714;
+  --rel3: #7d97ff; --rel2: #4b5fa8; --rel1: #2a3760;
+  --shadow: 0 1px 2px rgba(0,0,0,.3);
+}
+
 * { box-sizing: border-box; }
-body { margin: 0; background: var(--page); color: var(--ink);
-  font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
-.wrap { max-width: 1120px; margin: 0 auto; padding: 24px 16px 64px; }
-header { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; justify-content: space-between; }
-h1 { font-size: 24px; margin: 0; letter-spacing: -0.01em; }
-h2 { font-size: 17px; margin: 32px 0 4px; }
-.sub { color: var(--ink-2); margin: 2px 0 0; font-size: 14px; }
-.meta { display: flex; flex-wrap: wrap; gap: 8px 16px; color: var(--ink-2); font-size: 13px; margin-top: 14px; }
-.meta b { color: var(--ink); font-weight: 600; }
-.ok { color: var(--go); } .warn { color: var(--bad); }
-button, .btn { font: inherit; font-size: 14px; border-radius: 8px; padding: 7px 14px; cursor: pointer;
-  border: 1px solid var(--line); background: var(--surface); color: var(--ink); text-decoration: none; display: inline-block; }
-button.primary, .btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
-button:disabled { opacity: .55; cursor: default; }
-.tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 18px; }
-.tile { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; }
-.tile .n { font-size: 26px; font-weight: 650; font-variant-numeric: tabular-nums; }
-.tile .l { font-size: 13px; color: var(--ink-2); }
-.hint { color: var(--muted); font-size: 13px; margin: 0 0 12px; }
-.cards { display: grid; gap: 12px; }
-.card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
-.row1 { display: flex; gap: 12px; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; }
-.who { font-weight: 600; font-size: 16px; } .firm { color: var(--ink-2); font-size: 14px; }
-.score { font-variant-numeric: tabular-nums; font-weight: 700; font-size: 20px; text-align: right; }
-.score small { display: block; font-size: 11px; font-weight: 500; color: var(--muted); }
-.pill { display: inline-block; font-size: 12px; font-weight: 600; border-radius: 999px; padding: 2px 10px; margin-top: 6px; }
-.p-REACH_OUT_NOW { background: var(--go-bg); color: var(--go); }
-.p-NUDGE_NOW { background: var(--nudge-bg); color: var(--nudge); }
-.p-HOLD_AWAITING_REPLY, .p-CONTINUE { background: var(--hold-bg); color: var(--hold); }
-.p-DEPRIORITISE, .p-SKIP_PASSED, .p-none { background: var(--quiet-bg); color: var(--quiet); }
-.why { margin: 10px 0 6px; font-size: 14px; color: var(--ink-2); }
-ul.ev { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
-ul.ev li { padding: 7px 0; border-bottom: 1px solid var(--line); font-size: 13.5px; display: flex; gap: 10px; }
-ul.ev .d { color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; min-width: 46px; }
-ul.ev a { color: var(--ink); } ul.ev .tag { color: var(--muted); font-size: 12px; white-space: nowrap; }
-.actions { margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap; }
-.mini { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 8px; }
-.mini .card { padding: 12px 14px; } .mini .why { margin: 4px 0 0; font-size: 13px; }
-details.card summary { cursor: pointer; }
-.table-wrap { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
-table { border-collapse: collapse; width: 100%; font-size: 13.5px; min-width: 980px; }
-th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
-th { font-size: 12px; color: var(--ink-2); font-weight: 600; background: var(--page); position: sticky; top: 0; }
-th.sys { color: var(--muted); }
-td.sys { color: var(--ink-2); background: color-mix(in srgb, var(--page) 60%, transparent); }
-td input, td select, td textarea { font: inherit; font-size: 13px; width: 100%; border: 1px solid var(--line);
-  border-radius: 6px; padding: 4px 6px; background: var(--surface); color: var(--ink); }
-td textarea { min-height: 54px; resize: vertical; }
-.saved { color: var(--go); font-size: 12px; }
-dialog { border: 1px solid var(--line); border-radius: 14px; padding: 0; width: min(640px, calc(100vw - 32px));
-  background: var(--surface); color: var(--ink); }
-dialog::backdrop { background: rgba(0,0,0,.35); }
-.dlg { padding: 18px; display: grid; gap: 10px; }
-.dlg label { font-size: 12px; color: var(--ink-2); display: grid; gap: 4px; }
-.dlg input, .dlg textarea { font: inherit; font-size: 14px; border: 1px solid var(--line); border-radius: 8px;
-  padding: 8px 10px; background: var(--page); color: var(--ink); }
-.dlg textarea { min-height: 220px; }
-.gate { max-width: 420px; margin: 18vh auto; padding: 0 16px; display: grid; gap: 10px; }
-.gate input { font: inherit; padding: 9px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
-.empty { color: var(--muted); font-size: 14px; padding: 6px 0; }
-@media (max-width: 640px) { .tiles { grid-template-columns: repeat(2, 1fr); } h1 { font-size: 20px; } }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--ink); font: 15px/1.5 var(--f-body); -webkit-font-smoothing: antialiased; }
+a { color: inherit; }
+button, input, select, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.wrap { max-width: 1240px; margin: 0 auto; padding-inline: 20px; }
+.mono { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+.eyebrow { font: 500 12px/1.2 var(--f-mono); letter-spacing: .08em; text-transform: uppercase; }
+
+/* ---------- Brief band ---------- */
+.band { background: var(--band); color: var(--band-ink); padding-block: 18px 30px; }
+.topbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.brand { display: flex; align-items: center; gap: 10px; }
+.brand svg { flex: none; }
+.brand b { font: 700 18px/1 var(--f-display); letter-spacing: -.01em; }
+.brand span { color: var(--band-2); font-size: 13px; }
+.top-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.btn { border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 9px;
+  padding: 8px 14px; font-size: 14px; font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;
+  text-decoration: none; transition: background .15s, border-color .15s, transform .05s; }
+.btn:hover { border-color: var(--accent); }
+.btn:active { transform: translateY(1px); }
+.btn:disabled { opacity: .55; cursor: default; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn.primary:hover { filter: brightness(1.08); }
+.btn.ghost-band { background: transparent; border-color: var(--band-line); color: var(--band-ink); }
+.btn.ghost-band:hover { border-color: var(--band-2); }
+.btn.run { background: var(--band-ink); color: var(--band); border-color: var(--band-ink); font-weight: 600; }
+.btn.sm { padding: 5px 10px; font-size: 13px; border-radius: 8px; }
+
+.brief { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 32px; margin-top: 30px; align-items: end; }
+.brief .eyebrow { color: var(--band-2); }
+.brief h1 { font: 700 clamp(28px, 3.6vw, 44px)/1.08 var(--f-display); letter-spacing: -.02em; margin: 10px 0 12px; text-wrap: balance; }
+.brief h1 em { font-style: normal; color: #9fe0bf; }
+.brief h1 i { font-style: normal; color: #ffc983; }
+.brief p { margin: 0; color: var(--band-2); max-width: 60ch; }
+.runmeta { display: grid; gap: 8px; font-size: 13px; color: var(--band-2); }
+.runmeta b { color: var(--band-ink); font-weight: 500; }
+.proof { display: inline-flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 8px;
+  background: rgba(69,208,143,.14); color: #9fe0bf; font-size: 13px; width: fit-content; }
+.proof.warn { background: rgba(242,120,109,.16); color: #ffb2aa; }
+
+.dist { margin-top: 26px; }
+.dist-bar { display: flex; height: 14px; border-radius: 7px; overflow: hidden; gap: 2px; background: var(--band-line); }
+.dist-bar span { display: block; height: 100%; transition: flex-grow .4s; }
+.dist-legend { display: flex; flex-wrap: wrap; gap: 6px 8px; margin-top: 12px; }
+.dist-legend button { background: transparent; border: 1px solid var(--band-line); color: var(--band-ink); border-radius: 999px;
+  padding: 4px 11px 4px 9px; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 7px; }
+.dist-legend button:hover, .dist-legend button[aria-pressed="true"] { border-color: var(--band-2); background: var(--band-line); }
+.dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+.c-go { background: #3fcf8c; } .c-nudge { background: #f4a94e; } .c-hold { background: #a79cff; }
+.c-quiet { background: #7f8aa3; } .c-passed { background: #4b5671; }
+
+.progress { margin-top: 16px; display: none; gap: 8px; }
+.progress.on { display: grid; }
+.progress .track { height: 6px; background: var(--band-line); border-radius: 3px; overflow: hidden; }
+.progress .fill { height: 100%; width: 0; background: var(--band-ink); transition: width .6s; }
+.progress small { color: var(--band-2); font-size: 13px; }
+
+/* ---------- Main ---------- */
+main { padding-block: 28px 64px; }
+.cols { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 24px; align-items: start; }
+.sec-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+h2 { font: 700 22px/1.2 var(--f-display); letter-spacing: -.01em; margin: 0; }
+.sec-head p { margin: 2px 0 0; color: var(--ink-2); font-size: 14px; }
+
+.queue { display: grid; gap: 14px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow); }
+.vc { padding: 18px 18px 16px; display: grid; gap: 14px; }
+.vc-top { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 14px; align-items: start; }
+.vc-name { font: 700 19px/1.2 var(--f-display); letter-spacing: -.01em; margin: 0; }
+.vc-firm { color: var(--ink-2); font-size: 14px; margin-top: 2px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.pill { display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 3px 10px; font-size: 12.5px; font-weight: 600; white-space: nowrap; }
+.pill.go { background: var(--go-bg); color: var(--go); } .pill.nudge { background: var(--nudge-bg); color: var(--nudge); }
+.pill.hold { background: var(--hold-bg); color: var(--hold); } .pill.quiet { background: var(--quiet-bg); color: var(--quiet); }
+.pill.passed { background: var(--quiet-bg); color: var(--quiet); }
+.pill.plain { background: var(--surface-2); color: var(--ink-2); font-weight: 500; }
+
+.score { text-align: right; min-width: 120px; }
+.score .n { font: 700 34px/1 var(--f-display); letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.score .n small { font: 400 13px var(--f-mono); color: var(--muted); }
+.meter { position: relative; height: 6px; background: var(--surface-2); border-radius: 3px; margin-top: 8px; }
+.meter .f { position: absolute; inset: 0 auto 0 0; border-radius: 3px; background: var(--accent); }
+.meter .th { position: absolute; top: -4px; bottom: -4px; width: 2px; background: var(--ink); opacity: .55; border-radius: 1px; }
+.score .cap { font: 400 11px/1.2 var(--f-mono); color: var(--muted); margin-top: 6px; }
+
+.why { display: grid; gap: 0; border-top: 1px solid var(--line); }
+.ev { display: grid; grid-template-columns: 64px 92px minmax(0, 1fr); gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 14px; align-items: start; }
+.ev:last-child { border-bottom: 0; }
+.ev .d { font: 500 13px var(--f-mono); color: var(--ink-2); padding-top: 2px; }
+.ev .t { display: grid; gap: 4px; }
+.tag { font: 500 11.5px/1 var(--f-mono); letter-spacing: .02em; padding: 4px 7px; border-radius: 6px; width: fit-content; background: var(--surface-2); color: var(--ink-2); }
+.tag.rel3 { background: var(--accent-soft); color: var(--accent); }
+.ev .s { min-width: 0; }
+.ev .s a { color: var(--ink); text-decoration: none; }
+.ev .s a:hover { text-decoration: underline; text-decoration-color: var(--accent); }
+.ev .s small { display: block; color: var(--muted); font-size: 12.5px; margin-top: 2px; }
+
+.strip-wrap { display: grid; gap: 6px; }
+.strip { display: grid; grid-template-columns: repeat(30, minmax(0, 1fr)); gap: 3px; }
+.strip i { display: block; height: 16px; border-radius: 3px; background: var(--surface-2); }
+.strip i.r1 { background: var(--rel1); } .strip i.r2 { background: var(--rel2); } .strip i.r3 { background: var(--rel3); }
+.strip-axis { display: flex; justify-content: space-between; font: 400 11px var(--f-mono); color: var(--muted); }
+
+.vc-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.vc-foot .note { color: var(--ink-2); font-size: 13px; min-width: 0; flex: 1 1 260px; }
+.vc-foot .note b { color: var(--ink); font-weight: 500; }
+.vc-foot .acts { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.empty { padding: 28px; text-align: center; color: var(--ink-2); }
+
+/* rail */
+.rail { display: grid; gap: 16px; position: sticky; top: calc(env(safe-area-inset-top, 0px) + 16px); }
+.panel { padding: 16px 18px; }
+.panel h3 { font: 700 15px/1.3 var(--f-display); margin: 0 0 10px; letter-spacing: -.005em; }
+.kv { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; font-size: 13.5px; }
+.kv dt { color: var(--muted); } .kv dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; }
+.guard { margin-top: 12px; padding: 10px 12px; border-radius: 10px; background: var(--go-bg); color: var(--go); font-size: 13px; display: grid; gap: 4px; }
+.guard.warn { background: var(--bad-bg); color: var(--bad); }
+.guard b { font-weight: 600; }
+.cols-proof { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; font-size: 12.5px; }
+.cols-proof div { border: 1px dashed var(--line); border-radius: 8px; padding: 8px 10px; color: var(--ink-2); }
+.cols-proof strong { display: block; font: 500 11px var(--f-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
+.history { display: grid; gap: 0; margin-top: 10px; font-size: 13px; }
+.history div { display: grid; grid-template-columns: 1fr auto auto; gap: 10px; padding: 6px 0; border-top: 1px solid var(--line); color: var(--ink-2); }
+.history .ok { color: var(--go); } .history .bad { color: var(--bad); }
+.mix { display: grid; gap: 8px; }
+.mix-row { display: grid; grid-template-columns: 82px 1fr 30px; gap: 10px; align-items: center; font-size: 13px; }
+.mix-row .b { height: 8px; border-radius: 4px; background: var(--surface-2); overflow: hidden; }
+.mix-row .b span { display: block; height: 100%; background: var(--accent); border-radius: 4px; }
+.rules { font-size: 13px; color: var(--ink-2); display: grid; gap: 6px; }
+.rules p { margin: 0; }
+.legend-rel { display: flex; gap: 10px; flex-wrap: wrap; font-size: 12px; color: var(--muted); margin-top: 8px; }
+.legend-rel span { display: inline-flex; align-items: center; gap: 5px; }
+.legend-rel i { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+
+/* table */
+.pipeline { margin-top: 40px; }
+.toolbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
+.seg { display: inline-flex; background: var(--surface-2); border-radius: 10px; padding: 3px; gap: 2px; flex-wrap: wrap; }
+.seg button { border: 0; background: transparent; padding: 6px 12px; border-radius: 8px; font-size: 13.5px; cursor: pointer; color: var(--ink-2); }
+.seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: var(--shadow); font-weight: 500; }
+.search { flex: 1 1 220px; min-width: 0; border: 1px solid var(--line); background: var(--surface); border-radius: 10px; padding: 8px 12px; font-size: 14px; }
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 860px; }
+th { text-align: left; font: 500 11.5px var(--f-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted);
+  padding: 12px 14px; border-bottom: 1px solid var(--line); background: var(--surface); position: sticky; top: 0; }
+td { padding: 12px 14px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+tbody tr { cursor: pointer; transition: background .12s; }
+tbody tr:hover { background: var(--surface-2); }
+tbody tr:last-child td { border-bottom: 0; }
+td .who b { display: block; font-weight: 600; }
+td .who span { color: var(--ink-2); font-size: 13px; }
+.mini-meter { display: flex; align-items: center; gap: 10px; }
+.mini-meter .meter { width: 80px; margin: 0; }
+.mini-meter b { font: 500 14px var(--f-mono); width: 26px; text-align: right; }
+td.sum { color: var(--ink-2); font-size: 13px; max-width: 340px; }
+.clamp { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+/* drawer */
+dialog { border: 0; padding: 0; background: transparent; color: var(--ink); max-width: none; max-height: none; }
+dialog::backdrop { background: rgba(6,12,24,.45); }
+dialog.drawer { margin: 0 0 0 auto; height: 100%; width: min(560px, 100%); }
+.drawer-inner { background: var(--surface); height: 100%; overflow-y: auto; display: grid; align-content: start; gap: 22px;
+  padding: calc(env(safe-area-inset-top, 0px) + 20px) 22px 32px; border-left: 1px solid var(--line); }
+.d-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: start; }
+.d-head h2 { font-size: 24px; }
+.close { border: 1px solid var(--line); background: var(--surface); width: 36px; height: 36px; border-radius: 9px; cursor: pointer; font-size: 18px; line-height: 1; }
+.d-sec { display: grid; gap: 10px; }
+.d-sec > h3 { font: 500 12px var(--f-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 0; display: flex; align-items: center; gap: 8px; }
+.field { display: grid; gap: 5px; font-size: 13px; color: var(--ink-2); }
+.field input, .field select, .field textarea { border: 1px solid var(--line); background: var(--bg); border-radius: 9px; padding: 9px 11px; font-size: 14px; color: var(--ink); width: 100%; }
+.field textarea { min-height: 84px; resize: vertical; line-height: 1.45; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.locked { display: grid; gap: 8px; background: var(--surface-2); border-radius: 10px; padding: 12px 14px; font-size: 13.5px; }
+.locked div { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 10px; }
+.locked span { color: var(--muted); }
+.mail { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+.mail .row { display: grid; grid-template-columns: 64px minmax(0, 1fr); align-items: center; border-bottom: 1px solid var(--line); }
+.mail .row label { padding: 0 12px; font-size: 13px; color: var(--muted); }
+.mail input, .mail textarea { border: 0; background: transparent; padding: 10px 12px 10px 0; font-size: 14px; width: 100%; color: var(--ink); }
+.mail textarea { min-height: 220px; padding: 12px; resize: vertical; line-height: 1.55; display: block; }
+.mail-acts { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.toast { position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom, 0px) + 22px); transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 10px; font-size: 14px; opacity: 0; transition: .25s; pointer-events: none; z-index: 50; }
+.toast.on { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.gate { min-height: 100vh; display: grid; place-items: center; padding-inline: 20px; background: var(--band); color: var(--band-ink); }
+.gate form { width: min(380px, 100%); display: grid; gap: 12px; }
+.gate h1 { font: 700 30px/1.1 var(--f-display); margin: 0; }
+.gate p { margin: 0; color: var(--band-2); }
+.gate input { border: 1px solid var(--band-line); background: rgba(255,255,255,.06); color: var(--band-ink); border-radius: 10px; padding: 11px 13px; font-size: 15px; }
+.gate .err { color: #ffb2aa; font-size: 13px; min-height: 18px; }
+.skel { height: 120px; border-radius: 14px; background: linear-gradient(90deg, var(--surface-2), var(--surface), var(--surface-2)); background-size: 200% 100%; animation: sh 1.4s infinite; }
+@keyframes sh { to { background-position: -200% 0; } }
+
+@media (max-width: 980px) {
+  .cols { grid-template-columns: minmax(0, 1fr); }
+  .rail { position: static; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+  .brief { grid-template-columns: minmax(0, 1fr); gap: 18px; }
+}
+@media (max-width: 560px) {
+  .wrap { padding-inline: 16px; }
+  .ev { grid-template-columns: 54px minmax(0, 1fr); }
+  .ev .t { grid-column: 2; grid-row: 1; flex-direction: row; display: flex; gap: 6px; }
+  .ev .s { grid-column: 2; }
+  .vc-top { grid-template-columns: minmax(0, 1fr); }
+  .score { text-align: left; }
+  .grid2 { grid-template-columns: 1fr; }
+  .locked div { grid-template-columns: 1fr; gap: 2px; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
 </style>
 </head>
 <body>
-<div id="app" class="wrap"><p class="empty">Loading…</p></div>
+<div id="app"></div>
 
-<dialog id="draft">
-  <form method="dialog" class="dlg">
-    <strong id="d-title">Email draft</strong>
-    <label>To<input id="d-to" placeholder="No public email on file: add one"></label>
-    <label>Subject<input id="d-subject"></label>
-    <label>Body<textarea id="d-body"></textarea></label>
-    <div class="actions">
-      <a class="btn primary" id="d-gmail" target="_blank" rel="noopener">Open in Gmail</a>
-      <a class="btn" id="d-mailto">Open in mail app</a>
-      <button type="button" id="d-copy">Copy</button>
-      <button value="close">Close</button>
-    </div>
-  </form>
-</dialog>
+<dialog class="drawer" id="drawer"><div class="drawer-inner" id="drawer-body"></div></dialog>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script>
+// ---------- setup ----------
 const params = new URLSearchParams(location.search);
-let KEY = params.get('key') || (() => { try { return localStorage.getItem('vc_key'); } catch { return null; } })();
-if (params.get('key')) { try { localStorage.setItem('vc_key', KEY); } catch {} }
-let DATA = null;
+const store = { get: (k) => { try { return localStorage.getItem(k); } catch { return null; } },
+                set: (k, v) => { try { localStorage.setItem(k, v); } catch {} } };
+let KEY = params.get('key') || store.get('vc_key');
+if (params.get('key')) store.set('vc_key', KEY);
 
-const $ = (s) => document.querySelector(s);
+let DATA = null, FILTER = 'all', QUERY = '', RUNNING = false;
+const $ = (s, el = document) => el.querySelector(s);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '–';
-const fmtTime = (d) => d ? new Date(d).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }) : '–';
-const STATUS = { yet_to_reach_out: 'Yet to reach out', waiting_response: 'Waiting for response', in_conversation: 'In conversation', passed: 'Passed' };
+const DAY = 86400000;
+const istToday = () => new Date(Date.now() + 5.5 * 3600000).toISOString().slice(0, 10);
+const fmtD = (d) => d ? new Date(d + (d.length === 10 ? 'T00:00:00' : '')).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '—';
+const fmtT = (d) => d ? new Date(d).toLocaleString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }) : '—';
+const daysAgo = (d) => d ? Math.round((Date.parse(istToday()) - Date.parse(d)) / DAY) : null;
 
+const STATUS = { yet_to_reach_out: 'Yet to reach out', waiting_response: 'Waiting for reply', in_conversation: 'In conversation', passed: 'Passed' };
+const GROUP = { REACH_OUT_NOW: 'go', NUDGE_NOW: 'nudge', HOLD_AWAITING_REPLY: 'hold', CONTINUE: 'hold', DEPRIORITISE: 'quiet', SKIP_PASSED: 'passed' };
+const SHORT = { REACH_OUT_NOW: 'Reach out now', NUDGE_NOW: 'Nudge now', HOLD_AWAITING_REPLY: 'Hold · awaiting reply', CONTINUE: 'In conversation', DEPRIORITISE: 'Quiet · skip this week', SKIP_PASSED: 'Passed' };
+const TYPE = { investment: 'Deal', blog: 'Post', interview: 'Interview', event: 'Event', other: 'News' };
+const REL = ['Off-topic', 'General', 'B2B SaaS', 'Logistics'];
+const THRESHOLD = 30;
+const code = (v) => v.check?.action_code || 'DEPRIORITISE';
+const group = (v) => GROUP[code(v)] || 'quiet';
+
+// ---------- api ----------
 async function api(path, opts = {}) {
   const sep = path.includes('?') ? '&' : '?';
-  const res = await fetch(`${path}${sep}key=${encodeURIComponent(KEY)}`, {
-    ...opts, headers: { 'Content-Type': 'application/json', ...(opts.headers || {}) } });
-  if (res.status === 401) { gate('That key was not accepted.'); throw new Error('unauthorised'); }
-  const body = await res.json();
-  if (!res.ok) throw new Error(body.error || res.statusText);
+  const res = await fetch(`${path}${sep}key=${encodeURIComponent(KEY)}`, { ...opts, headers: { 'Content-Type': 'application/json' } });
+  if (res.status === 401) { gate('That key was not accepted. Check it and try again.'); throw new Error('unauthorised'); }
+  let body = {};
+  try { body = await res.json(); } catch {}
+  if (!res.ok) throw new Error(body.error || `Request failed (${res.status})`);
   return body;
 }
+function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('on'), 2600); }
 
 function gate(msg = '') {
-  $('#app').innerHTML = `<div class="gate"><h1>VC Pipeline Intelligence</h1>
-    <p class="sub">Enter the dashboard key.</p><input id="k" type="password" autocomplete="off">
-    <button class="primary" id="go">Open</button><span class="warn">${esc(msg)}</span></div>`;
-  $('#go').onclick = () => { KEY = $('#k').value.trim(); try { localStorage.setItem('vc_key', KEY); } catch {} load(); };
+  document.getElementById('app').innerHTML = `<div class="gate"><form id="gate">
+    ${logo(34)}<h1>Pipeline Radar</h1><p>Enter the dashboard key to open Vikram's VC pipeline.</p>
+    <input id="gate-key" type="password" autocomplete="off" placeholder="Dashboard key" aria-label="Dashboard key">
+    <button class="btn run" type="submit">Open dashboard</button><div class="err">${esc(msg)}</div></form></div>`;
+  $('#gate').onsubmit = (e) => { e.preventDefault(); KEY = $('#gate-key').value.trim(); store.set('vc_key', KEY); load(); };
+  $('#gate-key').focus();
 }
 
 async function load() {
   if (!KEY) return gate();
+  if (!DATA) document.getElementById('app').innerHTML = `<div class="band"><div class="wrap">${topbar()}</div></div><main class="wrap"><div class="queue"><div class="skel"></div><div class="skel"></div></div></main>`;
   DATA = await api('/api/vcs');
   render();
 }
 
-const code = (v) => v.check?.action_code || 'none';
+// ---------- helpers ----------
+function logo(size = 26) {
+  return `<svg width="${size}" height="${size}" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="14" fill="none" stroke="currentColor" stroke-opacity=".35" stroke-width="2"/>
+  <circle cx="16" cy="16" r="8.5" fill="none" stroke="currentColor" stroke-opacity=".6" stroke-width="2"/><path d="M16 16 L27 9" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+  <circle cx="22.5" cy="11.5" r="2.6" fill="#3fcf8c"/></svg>`;
+}
+function topbar() {
+  return `<div class="topbar"><div class="brand">${logo()}<div><b>Pipeline Radar</b><br><span>FreightLoop · Seed round · 50 VCs</span></div></div>
+    <div class="top-actions"><button class="btn ghost-band sm" id="theme" type="button" aria-label="Toggle colour theme">◐ Theme</button>
+    <button class="btn run" id="run" type="button" ${RUNNING ? 'disabled' : ''}>${RUNNING ? 'Running…' : '↻ Run now'}</button></div></div>`;
+}
+function nextAutoRun() {
+  const now = new Date();
+  for (let i = 0; i < 8; i++) {
+    const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + i, 1, 0));
+    if ([1, 4].includes(d.getUTCDay()) && d > now) return d;
+  }
+}
+function events(v) {
+  // Group several outlets covering one event; keep the strongest item per event.
+  const map = new Map();
+  for (const s of v.evidence) {
+    const k = s.event || s.title;
+    const cur = map.get(k);
+    if (!cur) map.set(k, { ...s, outlets: 1 });
+    else { cur.outlets++; if (+s.points > +cur.points) Object.assign(cur, s, { outlets: cur.outlets }); }
+  }
+  return [...map.values()].sort((a, b) => b.points - a.points || b.published.localeCompare(a.published));
+}
+function strip(v) {
+  const today = Date.parse(istToday());
+  const best = {};
+  for (const s of v.evidence) { const k = Math.round((today - Date.parse(s.published)) / DAY); best[k] = Math.max(best[k] ?? 0, s.relevance + 1); }
+  let cells = '';
+  for (let k = 29; k >= 0; k--) {
+    const r = best[k] ? Math.max(1, best[k] - 1) : 0;
+    const day = new Date(today - k * DAY).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+    cells += `<i class="${best[k] ? 'r' + r : ''}" title="${day}${best[k] ? ' · signal (' + REL[best[k] - 1] + ')' : ''}"></i>`;
+  }
+  return `<div class="strip-wrap"><div class="strip" aria-label="Signals over the last 30 days">${cells}</div>
+    <div class="strip-axis"><span>30 days ago</span><span>today</span></div></div>`;
+}
+function meter(score) {
+  return `<div class="meter" role="img" aria-label="Score ${score ?? 0} of 100; outreach line at ${THRESHOLD}">
+    <div class="f" style="width:${Math.max(0, Math.min(100, score ?? 0))}%"></div><div class="th" style="left:${THRESHOLD}%"></div></div>`;
+}
+function evRow(e) {
+  return `<div class="ev"><span class="d">${fmtD(e.published)}</span>
+    <span class="t"><span class="tag">${TYPE[e.type] || 'News'}</span><span class="tag ${e.relevance === 3 ? 'rel3' : ''}">${REL[e.relevance]}</span></span>
+    <span class="s"><a href="${esc(e.url)}" target="_blank" rel="noopener">${esc((e.summary || e.title).replace(/ \[firm\]/g, ''))}</a>
+    <small>${e.about === 'partner' ? 'About the partner' : 'Firm activity'} · ${esc(e.source === 'blog' ? 'firm blog' : e.source === 'search' ? 'web search' : 'news')}${e.outlets > 1 ? ` · ${e.outlets} outlets` : ''}</small></span></div>`;
+}
 
-function evidence(v) {
-  if (!v.evidence.length) return '';
-  const seen = new Set();
-  const rows = v.evidence.filter((s) => { const k = s.summary; if (seen.has(k)) return false; seen.add(k); return true; }).slice(0, 4);
-  return `<ul class="ev">${rows.map((s) => `<li><span class="d">${fmtDate(s.published)}</span>
-    <span><a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.title)}</a><br>
-    <span class="tag">${esc(s.type)} · ${['off-topic', 'general', 'B2B/SaaS', 'logistics'][s.relevance]} · ${esc(s.source)}${s.summary?.includes('[firm]') ? ' · firm signal' : ''}</span></span></li>`).join('')}</ul>`;
+// ---------- render ----------
+function render() {
+  const vcs = DATA.vcs, run = DATA.last_run;
+  const n = (g) => vcs.filter((v) => group(v) === g).length;
+  const counts = { go: n('go'), nudge: n('nudge'), hold: n('hold'), quiet: n('quiet'), passed: n('passed') };
+  const intact = run && run.protected_hash_after && run.protected_hash_before === run.protected_hash_after;
+  const next = nextAutoRun();
+  const weekOf = new Date(next).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' });
+
+  const act = vcs.filter((v) => ['go', 'nudge'].includes(group(v))).sort((a, b) => (b.follow_up_score ?? 0) - (a.follow_up_score ?? 0));
+
+  document.getElementById('app').innerHTML = `
+  <header class="band"><div class="wrap">
+    ${topbar()}
+    <div class="brief">
+      <div>
+        <div class="eyebrow">This week's brief · signals from the last 30 days</div>
+        <h1>Reach out to <em>${counts.go}</em> and nudge <i>${counts.nudge}</i>. ${counts.quiet} are quiet this week.</h1>
+        <p>Every recommendation below is backed by something the VC did, wrote, said or invested in during the last 30 days, with the link to check it.</p>
+      </div>
+      <div class="runmeta">
+        <span>Last run <b>${fmtT(run?.finished_at)}</b> · ${esc(run?.trigger === 'cron' ? 'scheduled' : 'manual')} · <b class="mono">${run?.vcs_checked ?? 0}</b> VCs · <b class="mono">${run?.signals_found ?? 0}</b> signals</span>
+        <span>Next automatic run <b>${fmtT(next)}</b> (Mon &amp; Thu, 6:30 am)</span>
+        ${run ? `<span class="proof ${intact ? '' : 'warn'}">${intact ? '✓ Your notes and contact history were not touched' : '⚠ Your columns changed during the last run'}</span>` : ''}
+      </div>
+    </div>
+    <div class="dist">
+      <div class="dist-bar" aria-hidden="true">
+        <span class="c-go" style="flex-grow:${counts.go}"></span><span class="c-nudge" style="flex-grow:${counts.nudge}"></span>
+        <span class="c-hold" style="flex-grow:${counts.hold}"></span><span class="c-quiet" style="flex-grow:${counts.quiet}"></span><span class="c-passed" style="flex-grow:${counts.passed}"></span>
+      </div>
+      <div class="dist-legend">
+        ${[['go', 'Reach out now'], ['nudge', 'Nudge now'], ['hold', 'In progress'], ['quiet', 'Quiet'], ['passed', 'Passed']].map(([g, l]) =>
+          `<button type="button" data-filter="${g}" aria-pressed="${FILTER === g}"><span class="dot c-${g}"></span>${l} <b class="mono">${counts[g]}</b></button>`).join('')}
+      </div>
+    </div>
+    <div class="progress" id="progress"><div class="track"><div class="fill" id="pfill"></div></div><small id="ptext">Starting run…</small></div>
+  </div></header>
+
+  <main class="wrap">
+    <div class="cols">
+      <section aria-labelledby="q-h">
+        <div class="sec-head"><div><h2 id="q-h">Act on these this week</h2><p>Ranked by follow-up score. Open the links to check the signal, then send the draft.</p></div></div>
+        <div class="queue">${act.map(card).join('') || '<div class="card empty">No VC has a strong enough signal right now. Check back after the next run.</div>'}</div>
+      </section>
+      <aside class="rail">${railRun(run, intact)}${railMix(vcs)}${railRules()}</aside>
+    </div>
+
+    <section class="pipeline" aria-labelledby="p-h">
+      <div class="sec-head"><div><h2 id="p-h">Full pipeline</h2><p>Click a VC to see the evidence, the email draft, and to edit your own notes.</p></div></div>
+      <div class="toolbar">
+        <div class="seg" role="group" aria-label="Filter">
+          ${[['all', 'All'], ['go', 'Reach out'], ['nudge', 'Nudge'], ['hold', 'In progress'], ['quiet', 'Quiet'], ['passed', 'Passed']].map(([f, l]) =>
+            `<button type="button" data-filter="${f}" aria-pressed="${FILTER === f}">${l}</button>`).join('')}
+        </div>
+        <input class="search" id="search" type="search" placeholder="Search VC, firm or note" value="${esc(QUERY)}" aria-label="Search">
+      </div>
+      <div class="card table-wrap"><table><thead><tr>
+        <th>VC</th><th>Your status</th><th>Last contact</th><th>Score</th><th>Last signal</th><th>Recommendation</th><th>Why</th>
+      </tr></thead><tbody id="rows"></tbody></table></div>
+    </section>
+  </main>`;
+
+  renderRows();
+  wire();
 }
 
 function card(v) {
-  const hasDraft = v.check?.draft_body;
-  return `<div class="card"><div class="row1"><div><div class="who">${esc(v.name)}</div>
-    <div class="firm">${esc(v.firm)} · ${STATUS[v.status]}${v.last_contact ? ` · last contact ${fmtDate(v.last_contact)}` : ''}</div>
-    <span class="pill p-${code(v)}">${esc(v.recommended_action || 'Not checked yet')}</span></div>
-    <div class="score">${v.follow_up_score ?? '–'}<small>follow-up score</small></div></div>
-    <p class="why">${esc(v.signal_summary || '')}</p>${evidence(v)}
-    <div class="actions">${hasDraft ? `<button class="primary" data-draft="${v.id}">Email draft</button>` : ''}
-    ${v.notes ? `<span class="hint" style="margin:6px 0 0">Your note: ${esc(v.notes)}</span>` : ''}</div></div>`;
+  const evs = events(v).slice(0, 3);
+  const g = group(v);
+  const since = daysAgo(v.last_contact);
+  return `<article class="card vc">
+    <div class="vc-top">
+      <div><h3 class="vc-name">${esc(v.name)}</h3><div class="vc-firm">${esc(v.firm)}</div>
+        <div class="chips"><span class="pill ${g}">${SHORT[code(v)]}</span><span class="pill plain">${STATUS[v.status]}${since !== null ? ` · ${since}d since contact` : ''}</span></div></div>
+      <div class="score"><div class="n">${v.follow_up_score ?? 0}<small> /100</small></div>${meter(v.follow_up_score)}<div class="cap">outreach line at ${THRESHOLD}</div></div>
+    </div>
+    <div class="why">${evs.map(evRow).join('')}</div>
+    ${strip(v)}
+    <div class="vc-foot">
+      <div class="note">${v.notes ? `<b>Your note:</b> ${esc(v.notes)}` : ''}</div>
+      <div class="acts">${v.check?.draft_body ? `<button class="btn primary sm" data-open="${v.id}" data-tab="draft" type="button">✉ Email draft</button>` : ''}
+        <button class="btn sm" data-open="${v.id}" type="button">Details</button></div>
+    </div>
+  </article>`;
 }
 
-function mini(v) {
-  return `<div class="card"><div class="row1"><div><div class="who" style="font-size:15px">${esc(v.name)}</div>
-    <div class="firm">${esc(v.firm)}</div></div><div class="score" style="font-size:16px">${v.follow_up_score ?? '–'}</div></div>
-    <span class="pill p-${code(v)}">${esc(v.recommended_action || 'Not checked yet')}</span>
-    <p class="why">${esc(v.signal_summary || '')}</p></div>`;
+function railRun(run, intact) {
+  const hist = (DATA.runs || []).slice(0, 4).map((r) => {
+    const ok = r.protected_hash_after && r.protected_hash_before === r.protected_hash_after;
+    return `<div><span>${fmtT(r.started_at)}</span><span class="mono">${r.vcs_checked}/${DATA.vcs.length}</span><span class="${r.status === 'failed' ? 'bad' : ok ? 'ok' : ''}">${r.status === 'failed' ? 'failed' : r.status === 'running' ? 'running' : ok ? '✓ notes safe' : r.status}</span></div>`;
+  }).join('');
+  return `<section class="card panel"><h3>Last run</h3>
+    <dl class="kv"><dt>Finished</dt><dd>${fmtT(run?.finished_at)}</dd><dt>VCs checked</dt><dd class="mono">${run?.vcs_checked ?? 0}</dd>
+    <dt>Signals found</dt><dd class="mono">${run?.signals_found ?? 0}</dd><dt>Trigger</dt><dd>${run?.trigger === 'cron' ? 'Scheduled' : 'Manual'}</dd></dl>
+    <div class="guard ${intact ? '' : 'warn'}"><b>${intact ? '✓ Your columns untouched' : '⚠ Check your columns'}</b>
+      <span>Fingerprint of your notes, history and status matched before and after the run.</span></div>
+    <div class="cols-proof"><div><strong>Run writes</strong>Last signal date, signal summary, follow-up score, recommended action</div>
+      <div><strong>Never writes</strong>Status, last contact, contact history, notes, email</div></div>
+    <div class="history">${hist}</div></section>`;
+}
+function railMix(vcs) {
+  const all = vcs.flatMap((v) => events(v));
+  const by = {}; for (const e of all) by[e.type] = (by[e.type] || 0) + 1;
+  const max = Math.max(1, ...Object.values(by));
+  const rel = [0, 0, 0, 0]; for (const e of all) rel[e.relevance]++;
+  return `<section class="card panel"><h3>Signal mix, last 30 days</h3><div class="mix">
+    ${['investment', 'blog', 'interview', 'event', 'other'].map((t) => `<div class="mix-row"><span>${TYPE[t]}s</span><span class="b"><span style="width:${(by[t] || 0) / max * 100}%"></span></span><span class="mono">${by[t] || 0}</span></div>`).join('')}
+    </div><p style="margin:12px 0 0;font-size:13px;color:var(--ink-2)"><b class="mono" style="color:var(--ink)">${rel[3]}</b> logistics and <b class="mono" style="color:var(--ink)">${rel[2]}</b> B2B SaaS signals across ${all.length} distinct events.</p></section>`;
+}
+function railRules() {
+  return `<section class="card panel"><h3>How the score works</h3><div class="rules">
+    <p>Each event earns up to 40 points: <b>type</b> (deal 1.0, post 0.8, event 0.7, interview 0.6) × <b>relevance</b> × <b>recency</b> (full for 7 days, fading to zero at 30).</p>
+    <p>Several outlets covering one event count once. Off-topic activity adds at most 15, so it can never cross the outreach line of ${THRESHOLD} alone.</p>
+    <p>A pending reply is never chased until 10 days after your last contact.</p>
+    <div class="legend-rel"><span><i style="background:var(--rel3)"></i>Logistics</span><span><i style="background:var(--rel2)"></i>B2B SaaS</span><span><i style="background:var(--rel1)"></i>General</span></div>
+  </div></section>`;
 }
 
-function render() {
-  const vcs = DATA.vcs, run = DATA.last_run;
-  const by = (codes) => vcs.filter((v) => codes.includes(code(v)));
-  const go = by(['REACH_OUT_NOW', 'NUDGE_NOW']), prog = by(['HOLD_AWAITING_REPLY', 'CONTINUE']),
-        quiet = by(['DEPRIORITISE', 'SKIP_PASSED', 'none']);
-  const intact = run && run.protected_hash_after && run.protected_hash_before === run.protected_hash_after;
+function renderRows() {
+  const q = QUERY.toLowerCase();
+  const rows = DATA.vcs
+    .filter((v) => FILTER === 'all' || group(v) === FILTER)
+    .filter((v) => !q || `${v.name} ${v.firm} ${v.notes || ''} ${v.signal_summary || ''}`.toLowerCase().includes(q))
+    .sort((a, b) => (b.follow_up_score ?? 0) - (a.follow_up_score ?? 0));
+  $('#rows').innerHTML = rows.map((v) => `<tr data-open="${v.id}" tabindex="0">
+    <td><div class="who"><b>${esc(v.name)}</b><span>${esc(v.firm)}</span></div></td>
+    <td>${STATUS[v.status]}</td>
+    <td class="mono">${fmtD(v.last_contact)}</td>
+    <td><div class="mini-meter"><b>${v.follow_up_score ?? 0}</b>${meter(v.follow_up_score)}</div></td>
+    <td class="mono">${fmtD(v.last_signal_date)}</td>
+    <td><span class="pill ${group(v)}">${SHORT[code(v)]}</span></td>
+    <td class="sum"><span class="clamp">${esc((v.signal_summary || '').replace(/ \[firm\]/g, ''))}</span></td></tr>`).join('')
+    || `<tr><td colspan="7" class="empty">No VCs match this filter.</td></tr>`;
+  document.querySelectorAll('#rows tr[data-open]').forEach((tr) => {
+    tr.onclick = () => openDrawer(+tr.dataset.open);
+    tr.onkeydown = (e) => { if (e.key === 'Enter') openDrawer(+tr.dataset.open); };
+  });
+}
 
-  $('#app').innerHTML = `
-  <header><div><h1>VC Pipeline Intelligence</h1>
-    <p class="sub">Who is worth reaching out to this week, and why. Signals from the last 30 days.</p></div>
-    <button class="primary" id="run">Run now</button></header>
-  <div class="meta">
-    <span>Last run: <b>${fmtTime(run?.finished_at)}</b> (${esc(run?.trigger || '–')}, ${esc(run?.status || 'never')})</span>
-    <span>${run?.vcs_checked ?? 0} VCs checked · ${run?.signals_found ?? 0} signals</span>
-    <span>Auto-runs Mon &amp; Thu, 6:30 am IST</span>
-    <span class="${intact ? 'ok' : 'warn'}">${run ? (intact ? '✓ Your notes &amp; contact history untouched by the last run' : '⚠ Pipeline columns changed during the run (or you edited mid-run)') : ''}</span>
-    <span id="runstate"></span>
-  </div>
-  <div class="tiles">
-    <div class="tile"><div class="n">${by(['REACH_OUT_NOW']).length}</div><div class="l">Reach out now</div></div>
-    <div class="tile"><div class="n">${by(['NUDGE_NOW']).length}</div><div class="l">Nudge now</div></div>
-    <div class="tile"><div class="n">${prog.length}</div><div class="l">In progress / hold</div></div>
-    <div class="tile"><div class="n">${quiet.length}</div><div class="l">Quiet: skip this week</div></div>
-  </div>
-
-  <h2>Worth reaching out to this week</h2>
-  <p class="hint">Each has an observable signal from the last 30 days. Open the links to check, then send the draft.</p>
-  <div class="cards">${go.map(card).join('') || '<p class="empty">No VC has a strong signal right now.</p>'}</div>
-
-  <h2>In progress</h2>
-  <p class="hint">Awaiting a reply you sent recently, or already in conversation.</p>
-  <div class="mini">${prog.map(mini).join('') || '<p class="empty">Nothing here.</p>'}</div>
-
-  <h2>Quiet: don't spend energy here this week</h2>
-  <p class="hint">No relevant public activity in 30 days, or they passed.</p>
-  <div class="mini">${quiet.map(mini).join('')}</div>
-
-  <h2>Your pipeline</h2>
-  <p class="hint">The white columns are yours, and the pipeline never writes them. The shaded columns are updated by each run.</p>
-  <div class="table-wrap"><table><thead><tr>
-    <th>VC</th><th>Status</th><th>Last contact</th><th>Email</th><th style="min-width:200px">Contact history</th><th style="min-width:220px">Notes</th>
-    <th class="sys">Last signal</th><th class="sys">Score</th><th class="sys" style="min-width:220px">Signal summary</th><th class="sys">Action</th><th></th>
-  </tr></thead><tbody>${[...vcs].sort((a, b) => a.id - b.id).map(row).join('')}</tbody></table></div>`;
-
+function wire() {
   $('#run').onclick = runNow;
-  document.querySelectorAll('[data-draft]').forEach((b) => b.onclick = () => openDraft(+b.dataset.draft));
-  document.querySelectorAll('[data-save]').forEach((b) => b.onclick = () => save(+b.dataset.save));
+  $('#theme').onclick = toggleTheme;
+  document.querySelectorAll('[data-filter]').forEach((b) => b.onclick = () => {
+    FILTER = FILTER === b.dataset.filter && b.closest('.dist-legend') ? 'all' : b.dataset.filter;
+    document.querySelectorAll('[data-filter]').forEach((x) => x.setAttribute('aria-pressed', x.dataset.filter === FILTER));
+    renderRows();
+    if (b.closest('.dist-legend')) document.querySelector('.pipeline').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+  $('#search').oninput = (e) => { QUERY = e.target.value; renderRows(); };
+  document.querySelectorAll('.queue [data-open]').forEach((b) => b.onclick = () => openDrawer(+b.dataset.open, b.dataset.tab));
 }
 
-function row(v) {
-  return `<tr data-row="${v.id}"><td><b>${esc(v.name)}</b><br><span class="firm">${esc(v.firm)}</span></td>
-    <td><select data-f="status">${Object.entries(STATUS).map(([k, l]) => `<option value="${k}" ${k === v.status ? 'selected' : ''}>${l}</option>`).join('')}</select></td>
-    <td><input type="date" data-f="last_contact" value="${esc(v.last_contact || '')}"></td>
-    <td><input data-f="email" value="${esc(v.email || '')}"></td>
-    <td><textarea data-f="contact_history">${esc(v.contact_history || '')}</textarea></td>
-    <td><textarea data-f="notes">${esc(v.notes || '')}</textarea></td>
-    <td class="sys">${fmtDate(v.last_signal_date)}</td><td class="sys">${v.follow_up_score ?? '–'}</td>
-    <td class="sys">${esc(v.signal_summary || '')}</td><td class="sys">${esc(v.recommended_action || '')}</td>
-    <td><button data-save="${v.id}">Save</button><div class="saved" data-msg="${v.id}"></div></td></tr>`;
+function toggleTheme() {
+  const root = document.documentElement;
+  const dark = root.dataset.theme ? root.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+  root.dataset.theme = dark ? 'light' : 'dark';
+  store.set('vc_theme', root.dataset.theme);
 }
+if (store.get('vc_theme')) document.documentElement.dataset.theme = store.get('vc_theme');
 
-async function save(id) {
-  const tr = document.querySelector(`[data-row="${id}"]`);
-  const body = { id };
-  tr.querySelectorAll('[data-f]').forEach((el) => body[el.dataset.f] = el.value);
-  const msg = document.querySelector(`[data-msg="${id}"]`);
-  try {
-    const updated = await api('/api/vcs', { method: 'PATCH', body: JSON.stringify(body) });
-    Object.assign(DATA.vcs.find((v) => v.id === id), updated);
-    msg.textContent = 'Saved';
-  } catch (e) { msg.textContent = e.message; msg.className = 'warn'; }
-}
-
-function openDraft(id) {
+// ---------- drawer ----------
+function openDrawer(id, tab) {
   const v = DATA.vcs.find((x) => x.id === id);
-  $('#d-title').textContent = `Email draft: ${v.name}, ${v.firm}`;
-  $('#d-to').value = v.email || '';
-  $('#d-subject').value = v.check.draft_subject || '';
-  $('#d-body').value = v.check.draft_body || '';
+  const evs = events(v);
+  const d = v.check || {};
+  $('#drawer-body').innerHTML = `
+    <div class="d-head"><div><div class="eyebrow" style="color:var(--muted)">${esc(v.firm)}</div><h2>${esc(v.name)}</h2>
+      <div class="chips"><span class="pill ${group(v)}">${SHORT[code(v)]}</span><span class="pill plain">Score ${v.follow_up_score ?? 0}/100</span></div></div>
+      <button class="close" type="button" id="d-close" aria-label="Close">×</button></div>
+    ${v.thesis ? `<p style="margin:0;color:var(--ink-2);font-size:14px">${esc(v.thesis)}</p>` : ''}
+
+    ${d.draft_body ? `<section class="d-sec" id="d-draft"><h3>✉ Email draft · ${d.action_code === 'NUDGE_NOW' ? 'follow-up nudge' : 'first outreach'}</h3>
+      <div class="mail"><div class="row"><label for="m-to">To</label><input id="m-to" value="${esc(v.email || '')}" placeholder="No public email on file. Add one."></div>
+      <div class="row"><label for="m-su">Subject</label><input id="m-su" value="${esc(d.draft_subject || '')}"></div>
+      <textarea id="m-body" aria-label="Email body">${esc(d.draft_body)}</textarea></div>
+      <div class="mail-acts"><a class="btn primary" id="m-gmail" target="_blank" rel="noopener">Open in Gmail</a>
+      <button class="btn" type="button" id="m-copy">Copy email</button><a class="btn" id="m-mailto">Mail app</a></div></section>` : ''}
+
+    <section class="d-sec"><h3>Why now · ${evs.length} event${evs.length === 1 ? '' : 's'} in 30 days</h3>
+      ${evs.length ? `<div class="why">${evs.map(evRow).join('')}</div>` : `<p style="margin:0;color:var(--ink-2)">${esc(v.signal_summary || 'Not checked yet.')}</p>`}
+      ${strip(v)}
+      <p style="margin:0;font-size:12.5px;color:var(--muted)">Checked: ${esc((d.sources_checked || []).join(', ') || '—')} · ${d.items_found ?? 0} items found · ${fmtT(d.checked_at)}</p></section>
+
+    <section class="d-sec"><h3>Your columns · you edit these</h3>
+      <form id="d-form" class="d-sec">
+        <div class="grid2"><label class="field">Status<select id="f-status">${Object.entries(STATUS).map(([k, l]) => `<option value="${k}" ${k === v.status ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
+        <label class="field">Last contact<input id="f-last" type="date" value="${esc(v.last_contact || '')}"></label></div>
+        <label class="field">Email<input id="f-email" type="email" value="${esc(v.email || '')}"></label>
+        <label class="field">Contact history<textarea id="f-hist">${esc(v.contact_history || '')}</textarea></label>
+        <label class="field">Notes<textarea id="f-notes">${esc(v.notes || '')}</textarea></label>
+        <div class="mail-acts"><button class="btn primary" type="submit" id="f-save">Save changes</button><span style="font-size:13px;color:var(--muted)">The next run reads these but never changes them.</span></div>
+      </form></section>
+
+    <section class="d-sec"><h3>🔒 Signal columns · written only by the run</h3>
+      <div class="locked"><div><span>Last signal date</span><b class="mono">${fmtD(v.last_signal_date)}</b></div>
+      <div><span>Follow-up score</span><b class="mono">${v.follow_up_score ?? '—'}</b></div>
+      <div><span>Recommended action</span><b>${esc(v.recommended_action || '—')}</b></div>
+      <div><span>Signal summary</span><span style="color:var(--ink)">${esc(v.signal_summary || '—')}</span></div></div></section>`;
+
+  const dlg = $('#drawer');
+  dlg.showModal();
+  $('#d-close').onclick = () => dlg.close();
+  dlg.onclick = (e) => { if (e.target === dlg) dlg.close(); };
+  if (d.draft_body) wireDraft();
+  if (tab === 'draft' && d.draft_body) $('#m-body').focus();
+  else $('#drawer-body').scrollTop = 0;
+
+  $('#d-form').onsubmit = async (e) => {
+    e.preventDefault();
+    const btn = $('#f-save'); btn.disabled = true; btn.textContent = 'Saving…';
+    try {
+      const updated = await api('/api/vcs', { method: 'PATCH', body: JSON.stringify({ id: v.id, status: $('#f-status').value, last_contact: $('#f-last').value,
+        email: $('#f-email').value.trim(), contact_history: $('#f-hist').value, notes: $('#f-notes').value }) });
+      Object.assign(v, updated);
+      toast('Saved. The next run will use your updated status.');
+      render(); dlg.close();
+    } catch (err) { toast(err.message); btn.disabled = false; btn.textContent = 'Save changes'; }
+  };
+}
+function wireDraft() {
   const sync = () => {
-    const to = $('#d-to').value, su = $('#d-subject').value, body = $('#d-body').value;
-    $('#d-gmail').href = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(to)}&su=${encodeURIComponent(su)}&body=${encodeURIComponent(body)}`;
-    $('#d-mailto').href = `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(su)}&body=${encodeURIComponent(body)}`;
+    const to = $('#m-to').value.trim(), su = $('#m-su').value, body = $('#m-body').value;
+    $('#m-gmail').href = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(to)}&su=${encodeURIComponent(su)}&body=${encodeURIComponent(body)}`;
+    $('#m-mailto').href = `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(su)}&body=${encodeURIComponent(body)}`;
   };
-  ['#d-to', '#d-subject', '#d-body'].forEach((s) => $(s).oninput = sync);
-  sync();
-  $('#d-copy').onclick = async () => {
-    await navigator.clipboard.writeText(`Subject: ${$('#d-subject').value}\n\n${$('#d-body').value}`);
-    $('#d-copy').textContent = 'Copied';
+  ['#m-to', '#m-su', '#m-body'].forEach((s) => $(s).oninput = sync); sync();
+  $('#m-copy').onclick = async () => {
+    const text = `To: ${$('#m-to').value}\nSubject: ${$('#m-su').value}\n\n${$('#m-body').value}`;
+    try { await navigator.clipboard.writeText(text); toast('Email copied'); }
+    catch { $('#m-body').select(); toast('Press Ctrl+C to copy the selected text'); }
   };
-  $('#draft').showModal();
 }
 
+// ---------- run ----------
 async function runNow() {
-  const btn = $('#run'), state = $('#runstate');
-  btn.disabled = true;
-  let runId = null, total = 0;
+  if (RUNNING) return;
+  RUNNING = true;
+  const btn = $('#run'); btn.disabled = true; btn.textContent = 'Running…';
+  $('#progress').classList.add('on');
+  const total = DATA.vcs.length;
+  const poll = setInterval(async () => {
+    try {
+      const s = await api('/api/status');
+      if (s.run?.status === 'running' || s.run?.status === 'partial') {
+        $('#pfill').style.width = `${Math.round(s.checked / total * 100)}%`;
+        $('#ptext').textContent = `Checking news, blogs and the web for each VC… ${s.checked} of ${total} done`;
+      }
+    } catch {}
+  }, 3000);
+  let runId = null;
   try {
     for (let step = 0; step < 6; step++) {
-      state.textContent = `Running… ${total} VCs checked`;
       const r = await api('/api/run', { method: 'POST', body: JSON.stringify({ run_id: runId }) });
-      runId = r.run_id; total += r.checked;
+      runId = r.run_id;
       if (!r.remaining) break;
     }
+    clearInterval(poll); RUNNING = false;
     await load();
-  } catch (e) { state.textContent = `Run failed: ${e.message}`; state.className = 'warn'; btn.disabled = false; }
+    toast('Run complete. The pipeline is up to date.');
+  } catch (err) {
+    clearInterval(poll); RUNNING = false;
+    btn.disabled = false; btn.textContent = '↻ Run now';
+    $('#ptext').textContent = `The run stopped: ${err.message}. Press Run now to continue where it left off.`;
+  }
 }
 
-load().catch((e) => { if (e.message !== 'unauthorised') $('#app').innerHTML = `<p class="warn">${esc(e.message)}</p>`; });
+load().catch((e) => { if (e.message !== 'unauthorised') document.getElementById('app').innerHTML = `<div class="wrap" style="padding-block:40px"><div class="card empty">Could not load the pipeline: ${esc(e.message)}. Refresh to try again.</div></div>`; });
 </script>
 </body>
 </html>
