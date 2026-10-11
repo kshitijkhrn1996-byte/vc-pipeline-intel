@@ -67,3 +67,12 @@ test('off-topic activity alone never reaches the outreach threshold', () => {
   assert.equal(score, 15);
   assert.equal(decideAction({ score, status: 'yet_to_reach_out' }, today).code, 'DEPRIORITISE');
 });
+
+test('investor-database pages are not signals', () => {
+  const out = validateItems([
+    { title: 'Whatfix - 2026 Funding Rounds & List of Investors - Tracxn', url: 'https://x.com/1', published: '2026-10-01' },
+    { title: 'Zetwerk company profile', publisher: 'Crunchbase', url: 'https://x.com/2', published: '2026-10-01' },
+    { title: 'Freight startup raises seed led by Fund', url: 'https://x.com/3', published: '2026-10-01' },
+  ], today);
+  assert.deepEqual(out.map((o) => o.url), ['https://x.com/3']);
+});

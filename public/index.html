@@ -175,7 +175,7 @@ h2 { font: 700 22px/1.2 var(--f-display); letter-spacing: -.01em; margin: 0; }
 .history div { display: grid; grid-template-columns: 1fr auto auto; gap: 10px; padding: 6px 0; border-top: 1px solid var(--line); color: var(--ink-2); }
 .history .ok { color: var(--go); } .history .bad { color: var(--bad); }
 .mix { display: grid; gap: 8px; }
-.mix-row { display: grid; grid-template-columns: 82px 1fr 30px; gap: 10px; align-items: center; font-size: 13px; }
+.mix-row { display: grid; grid-template-columns: 88px 1fr 30px; gap: 10px; align-items: center; font-size: 13px; }
 .mix-row .b { height: 8px; border-radius: 4px; background: var(--surface-2); overflow: hidden; }
 .mix-row .b span { display: block; height: 100%; background: var(--accent); border-radius: 4px; }
 .rules { font-size: 13px; color: var(--ink-2); display: grid; gap: 6px; }
@@ -290,6 +290,7 @@ const GROUP = { REACH_OUT_NOW: 'go', NUDGE_NOW: 'nudge', HOLD_AWAITING_REPLY: 'h
 const SHORT = { REACH_OUT_NOW: 'Reach out now', NUDGE_NOW: 'Nudge now', HOLD_AWAITING_REPLY: 'Hold · awaiting reply', CONTINUE: 'In conversation', DEPRIORITISE: 'Quiet · skip this week', SKIP_PASSED: 'Passed' };
 const TYPE = { investment: 'Deal', blog: 'Post', interview: 'Interview', event: 'Event', other: 'News' };
 const REL = ['Off-topic', 'General', 'B2B SaaS', 'Logistics'];
+const PLURAL = { investment: 'Deals', blog: 'Posts', interview: 'Interviews', event: 'Events', other: 'Other news' };
 const THRESHOLD = 30;
 const code = (v) => v.check?.action_code || 'DEPRIORITISE';
 const group = (v) => GROUP[code(v)] || 'quiet';
@@ -392,7 +393,7 @@ function render() {
     <div class="brief">
       <div>
         <div class="eyebrow">This week's brief · signals from the last 30 days</div>
-        <h1>Reach out to <em>${counts.go}</em> and nudge <i>${counts.nudge}</i>. ${counts.quiet} are quiet this week.</h1>
+        <h1>Reach out to&nbsp;<em>${counts.go}</em> and nudge&nbsp;<i>${counts.nudge}</i>. ${counts.quiet}&nbsp;are quiet this week.</h1>
         <p>Every recommendation below is backed by something the VC did, wrote, said or invested in during the last 30 days, with the link to check it.</p>
       </div>
       <div class="runmeta">
@@ -482,7 +483,7 @@ function railMix(vcs) {
   const max = Math.max(1, ...Object.values(by));
   const rel = [0, 0, 0, 0]; for (const e of all) rel[e.relevance]++;
   return `<section class="card panel"><h3>Signal mix, last 30 days</h3><div class="mix">
-    ${['investment', 'blog', 'interview', 'event', 'other'].map((t) => `<div class="mix-row"><span>${TYPE[t]}s</span><span class="b"><span style="width:${(by[t] || 0) / max * 100}%"></span></span><span class="mono">${by[t] || 0}</span></div>`).join('')}
+    ${['investment', 'blog', 'interview', 'event', 'other'].map((t) => `<div class="mix-row"><span>${PLURAL[t]}</span><span class="b"><span style="width:${(by[t] || 0) / max * 100}%"></span></span><span class="mono">${by[t] || 0}</span></div>`).join('')}
     </div><p style="margin:12px 0 0;font-size:13px;color:var(--ink-2)"><b class="mono" style="color:var(--ink)">${rel[3]}</b> logistics and <b class="mono" style="color:var(--ink)">${rel[2]}</b> B2B SaaS signals across ${all.length} distinct events.</p></section>`;
 }
 function railRules() {

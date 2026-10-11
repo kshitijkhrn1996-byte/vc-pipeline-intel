@@ -40,13 +40,15 @@ Dashboard (public/index.html + /api/vcs) ◄─ ranked list · evidence · quiet
 |---|---|
 | `api/run.js` | Cron + manual run endpoint |
 | `api/vcs.js` | Dashboard data; Vikram's edits (whitelisted columns only) |
+| `api/status.js` | Live progress of the current run (dashboard progress bar) |
 | `lib/sources.js`, `lib/rss.js` | Live collectors: Google News, blog RSS, Gemini search grounding |
 | `lib/gemini.js` | Classification and email drafts (Gemini Flash, structured output) |
 | `lib/pipeline.js` | The run: collect → validate → classify → score → act → draft → write |
 | `src/scoring.js`, `src/validate.js` | Deterministic scoring, action rules, evidence validation (unit-tested) |
 | `sql/schema.sql` | Tables, guard trigger, `apply_signal()`, `protected_hash()` |
 | `data/vcs.json`, `scripts/seed.js` | 50 researched VCs; seed with fictional relationship history |
-| `public/index.html` | Dashboard |
+| `public/index.html` | Dashboard: weekly brief, priority queue with evidence, drafts, run proof, editable pipeline |
+| `docs/` | Components Map (docx + png), dashboard screenshot |
 
 ## Run
 
@@ -66,4 +68,5 @@ Optional: `FOUNDER_NAME`, `COMPANY_NAME`, `COMPANY_PITCH`.
 - Don't nudge a pending reply until 10 days after last contact.
 - Firm-level deals count as signals for the partner, and are labelled "firm signal".
 - LinkedIn and X posts are not covered (no free API; scraping breaks their terms). News, firm blogs and web search are.
+- Investor-database pages (Tracxn, Crunchbase, …) are filtered out: they list old rounds, not something the VC did.
 - VC contact emails are firm-level public addresses only; personal addresses were deliberately not collected.

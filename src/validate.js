@@ -13,12 +13,16 @@ export function normaliseTitle(title) {
     .toLowerCase().replace(/[^a-z0-9 ]/g, '').replace(/\s+/g, ' ').trim();
 }
 
+// Investor databases and company-profile pages list old rounds; they are not something the VC did.
+const DATABASE_PAGES = /\b(tracxn|crunchbase|pitchbook|cb ?insights|zaubacorp|tofler|craft\.co|wellfound|private company profile|funding rounds (&|and) (list of )?investors)\b/i;
+
 export function validateItems(items, today) {
   const seen = new Set();
   const out = [];
   for (const it of items) {
     const published = toIsoDate(it.published);
     if (!published || !/^https?:\/\//.test(it.url || '') || !it.title) continue;
+    if (DATABASE_PAGES.test(`${it.title} ${it.publisher || ''} ${it.url}`)) continue;
     const age = daysBetween(published, today);
     if (age < 0 || age > WINDOW_DAYS) continue;
     const key = normaliseTitle(it.title);
