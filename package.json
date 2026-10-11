@@ -7,7 +7,8 @@
     "test": "node --test",
     "pipeline": "node --env-file=.env scripts/run-once.js",
     "dry-run": "node --env-file=.env scripts/dry-run.js",
-    "seed": "node scripts/seed.js"
+    "seed": "node scripts/seed.js",
+    "audit": "node --env-file=.env scripts/audit.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.117.3"

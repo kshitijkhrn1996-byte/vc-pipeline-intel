@@ -112,7 +112,10 @@ async function processChunk(run, vcs, today, rejected) {
   // Outreach drafts for the VCs worth contacting now.
   const toDraft = results.filter((r) => DRAFT_ACTIONS.has(r.action.code)).map((r) => ({
     vc: r.vc, kind: r.action.code === 'NUDGE_NOW' ? 'nudge' : 'first',
-    signals: [...r.kept].sort((a, b) => b.points - a.points).filter((s) => s.relevance >= 2).slice(0, 2),
+    // Most on-topic first (logistics before B2B SaaS), then strongest; one item per event.
+    signals: [...r.kept].filter((s) => s.relevance >= 2)
+      .sort((a, b) => b.relevance - a.relevance || b.points - a.points)
+      .filter((s, i, arr) => arr.findIndex((x) => (x.event || x.title) === (s.event || s.title)) === i).slice(0, 3),
   }));
   const draftLists = await pool(chunks(toDraft, DRAFT_BATCH), 3, (b) => draftEmails(b).catch(() => []));
   const drafts = new Map(draftLists.flat().map((d) => [d.vc_id, d]));
