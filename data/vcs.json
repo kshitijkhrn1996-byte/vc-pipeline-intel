@@ -1,0 +1,452 @@
+[
+  {
+    "name": "Karthik Reddy",
+    "firm": "Blume Ventures",
+    "thesis": "Seed/early-stage India tech fund backing B2B SaaS, deeptech and supply-chain automation; early investor in warehouse robotics and logistics software.",
+    "website": "https://blume.vc",
+    "blog_rss": "",
+    "email": "",
+    "portfolio_example": "GreyOrange"
+  },
+  {
+    "name": "Alok Goyal",
+    "firm": "Stellaris Venture Partners",
+    "thesis": "India-only seed/Series A fund with an active B2B commerce and supply chain/manufacturing thesis; ex-SAP India COO brings enterprise GTM depth.",
+    "website": "https://www.stellarisvp.com",
+    "blog_rss": "https://medium.com/feed/stellaris-venture-partners",
+    "email": "",
+    "portfolio_example": "Locofast"
+  },
+  {
+    "name": "Sudhir Sethi",
+    "firm": "Chiratae Ventures",
+    "thesis": "Early-stage India tech fund investing in SaaS, consumer and deeptech; led Series A in networked logistics SaaS Pando.",
+    "website": "https://www.chiratae.com",
+    "blog_rss": "https://www.chiratae.com/feed",
+    "email": "",
+    "portfolio_example": "Pando"
+  },
+  {
+    "name": "Rajinder Balaraman",
+    "firm": "Z47 (formerly Matrix Partners India)",
+    "thesis": "Seed-to-growth India fund with focus areas including B2B commerce & manufacturing and enterprise SaaS; Balaraman covers B2B/logistics.",
+    "website": "https://www.z47.com",
+    "blog_rss": "",
+    "email": "namaste@z47.com",
+    "portfolio_example": "OfBusiness"
+  },
+  {
+    "name": "Shripati Acharya",
+    "firm": "Prime Venture Partners",
+    "thesis": "Early-stage (seed/Series A) India fund backing fintech and B2B SaaS; backed logistics SaaS WheelsEye at seed.",
+    "website": "https://www.primevp.in",
+    "blog_rss": "",
+    "email": "info@primevp.in",
+    "portfolio_example": "WheelsEye"
+  },
+  {
+    "name": "Pranav Pai",
+    "firm": "3one4 Capital",
+    "thesis": "Seed-first India fund investing in B2B software, fintech, deeptech and logistics & distribution; led 2025 round in cross-border logistics startup Xindus.",
+    "website": "https://www.3one4capital.com",
+    "blog_rss": "",
+    "email": "hello@3one4capital.com",
+    "portfolio_example": "Xindus"
+  },
+  {
+    "name": "Prashanth Prakash",
+    "firm": "Accel India",
+    "thesis": "Seed/early-stage fund (incl. Accel Atoms pre-seed) backing India SaaS and B2B marketplaces; early backer of trucking platform BlackBuck and agri supply chain Ninjacart.",
+    "website": "https://www.accel.com",
+    "blog_rss": "",
+    "email": "",
+    "portfolio_example": "BlackBuck"
+  },
+  {
+    "name": "Mukul Arora",
+    "firm": "Elevation Capital",
+    "thesis": "Seed/Series A India fund backing B2B SaaS, fintech and consumer; as SAIF Partners backed logistics SaaS FarEye.",
+    "website": "https://www.elevationcapital.com",
+    "blog_rss": "https://elevationcapital.substack.com/feed",
+    "email": "community@elevationcapital.com",
+    "portfolio_example": "FarEye"
+  },
+  {
+    "name": "Vani Kola",
+    "firm": "Kalaari Capital",
+    "thesis": "Early-stage India tech fund (seed/Series A) across consumer, SaaS and deeptech; led rounds in logistics/distribution startup ElasticRun.",
+    "website": "https://kalaari.com",
+    "blog_rss": "",
+    "email": "investments@kalaari.com",
+    "portfolio_example": "ElasticRun"
+  },
+  {
+    "name": "Dev Khare",
+    "firm": "Lightspeed India",
+    "thesis": "Seed-to-growth India fund, increasingly AI/enterprise focused; early backer of B2B commerce and supply chain platform Udaan.",
+    "website": "https://lsvp.com",
+    "blog_rss": "https://lsvp.com/feed/",
+    "email": "",
+    "portfolio_example": "Udaan"
+  },
+  {
+    "name": "Rajan Anandan",
+    "firm": "Peak XV Partners (Surge)",
+    "thesis": "Surge is Peak XV's seed program (up to ~$3-5M cheques) for India/SEA startups; Surge led logistics SaaS Shipsy's Series A.",
+    "website": "https://surge.peakxv.com",
+    "blog_rss": "",
+    "email": "contactus@peakxv.com",
+    "portfolio_example": "Shipsy"
+  },
+  {
+    "name": "Shailendra Singh",
+    "firm": "Peak XV Partners (formerly Sequoia India & SEA)",
+    "thesis": "Seed-to-growth India/SEA fund; backs B2B manufacturing and supply chain platforms such as Zetwerk.",
+    "website": "https://www.peakxv.com",
+    "blog_rss": "",
+    "email": "contactus@peakxv.com",
+    "portfolio_example": "Zetwerk"
+  },
+  {
+    "name": "Rajiv Srivatsa",
+    "firm": "Antler India",
+    "thesis": "Day-zero/pre-seed investor running residency programs; sector-agnostic including B2B SaaS and AI, cheques up to ~$500K.",
+    "website": "https://www.antler.co",
+    "blog_rss": "https://www.antler.co/blog/rss.xml",
+    "email": "",
+    "portfolio_example": ""
+  },
+  {
+    "name": "Vaibhav Domkundwar",
+    "firm": "Better Capital",
+    "thesis": "Solo-GP pre-seed/seed fund ($300K-$1M cheques) backing India founders in SaaS, fintech and AI for India and global markets.",
+    "website": "https://better.capital",
+    "blog_rss": "https://medium.com/feed/better-capital",
+    "email": "",
+    "portfolio_example": ""
+  },
+  {
+    "name": "Kunal Bahl",
+    "firm": "Titan Capital",
+    "thesis": "Seed/pre-seed fund of Snapdeal founders backing 250+ startups across consumer, SaaS, fintech and logistics; early investor in Shadowfax.",
+    "website": "https://titancapital.vc",
+    "blog_rss": "",
+    "email": "info@titancapital.vc",
+    "portfolio_example": "Shadowfax"
+  },
+  {
+    "name": "Vinod Shankar",
+    "firm": "Java Capital",
+    "thesis": "Bengaluru seed fund investing in deeptech, SaaS and enterprise tech; backed procurement/supply chain startup ProcureYard (2025).",
+    "website": "https://javacapital.co",
+    "blog_rss": "",
+    "email": "",
+    "portfolio_example": "ProcureYard"
+  },
+  {
+    "name": "Kitty Agarwal",
+    "firm": "Info Edge Ventures",
+    "thesis": "Pre-seed to Series A fund of Info Edge; backed logistics SaaS Shipsy, citing fragmented, siloed logistics supply chains.",
+    "website": "https://www.infoedgeventures.in",
+    "blog_rss": "",
+    "email": "connect@infoedgeventures.com",
+    "portfolio_example": "Shipsy"
+  },
+  {
+    "name": "Suresh Shanmugham",
+    "firm": "Saama Capital",
+    "thesis": "Seed/pre-Series A India fund ($500K-$4M) focused on fintech, SaaS and consumer.",
+    "website": "https://saama.vc",
+    "blog_rss": "",
+    "email": "contactus@saama.vc",
+    "portfolio_example": ""
+  },
+  {
+    "name": "Sanjay Mehta",
+    "firm": "100X.VC",
+    "thesis": "Cohort-based pre-seed fund writing ~INR 1.25 Cr iSAFE cheques across sectors incl. B2B SaaS.",
+    "website": "https://www.100x.vc",
+    "blog_rss": "",
+    "email": "",
+    "portfolio_example": ""
+  },
+  {
+    "name": "Mitesh Shah",
+    "firm": "Inflection Point Ventures",
+    "thesis": "Angel platform/AIF leading seed and pre-Series A rounds across sectors; led round in logistics SaaS ShipEase.",
+    "website": "https://ipventures.in",
+    "blog_rss": "https://ipventures.in/feed/",
+    "email": "funding@ipventures.in",
+    "portfolio_example": "ShipEase"
+  },
+  {
+    "name": "Neeraj Arora",
+    "firm": "General Catalyst India (formerly Venture Highway)",
+    "thesis": "Seed-to-growth India platform after GC merged with Venture Highway; Venture Highway was an early backer of B2B industrial supply platform Moglix.",
+    "website": "https://www.generalcatalyst.com",
+    "blog_rss": "",
+    "email": "info@generalcatalyst.com",
+    "portfolio_example": "Moglix"
+  },
+  {
+    "name": "Suvir Sujan",
+    "firm": "Nexus Venture Partners",
+    "thesis": "Seed/early-stage India-US fund for enterprise SaaS and B2B; early backer of Delhivery and led Series A of trucking marketplace Vahak.",
+    "website": "https://www.nexusvp.com",
+    "blog_rss": "",
+    "email": "",
+    "portfolio_example": "Delhivery"
+  },
+  {
+    "name": "Sateesh Andra",
+    "firm": "Endiya Partners",
+    "thesis": "Hyderabad-based seed/early-stage fund investing in enterprise tech, B2B SaaS and life sciences.",
+    "website": "https://www.endiya.com",
+    "blog_rss": "",
+    "email": "contact@endiya.com",
+    "portfolio_example": ""
+  },
+  {
+    "name": "Sasha Mirchandani",
+    "firm": "Kae Capital",
+    "thesis": "Mumbai seed/early-stage fund across consumer, SaaS and B2B; early investor in intra-city logistics platform Porter.",
+    "website": "https://kae-capital.com",
+    "blog_rss": "",
+    "email": "",
+    "portfolio_example": "Porter"
+  },
+  {
+    "name": "Rohit Krishna",
+    "firm": "WEH Ventures",
+    "thesis": "Mumbai pre-seed/seed fund that typically leads or co-leads rounds in fintech, B2B and consumer tech.",
+    "website": "https://www.wehventures.com",
+    "blog_rss": "https://medium.com/feed/weh-ventures",
+    "email": "hello@wehventures.com",
+    "portfolio_example": ""
+  },
+  {
+    "name": "Shanti Mohan",
+    "firm": "LVX (formerly LetsVenture)",
+    "thesis": "Angel/early-stage investment platform (LVX Start, angel AIF) syndicating seed rounds across sectors incl. B2B SaaS.",
+    "website": "https://lvxventures.com",
+    "blog_rss": "",
+    "email": "",
+    "portfolio_example": ""
+  },
+  {
+    "name": "Rajul Garg",
+    "firm": "Leo Capital",
+    "thesis": "Early-stage India tech fund focused on seed/Series A in SaaS and B2B; led seed round of trucking marketplace Vahak.",
+    "website": "https://www.leo.capital",
+    "blog_rss": "",
+    "email": "",
+    "portfolio_example": "Vahak"
+  },
+  {
+    "name": "Anand Lunia",
+    "firm": "India Quotient",
+    "thesis": "Seed fund ($129M Fund V, 2025) backing India-specific B2B, SaaS and consumer businesses; backed SMB inventory/billing SaaS Vyapar.",
+    "website": "https://www.indiaquotient.in",
+    "blog_rss": "",
+    "email": "",
+    "portfolio_example": "Vyapar"
+  },
+  {
+    "name": "Kushal Bhagia",
+    "firm": "All In Capital",
+    "thesis": "Pre-seed/seed fund writing up to INR 5 Cr first cheques; its founders launched TorqLabs to back supply chain and logistics startups.",
+    "website": "https://www.allincapital.vc",
+    "blog_rss": "https://allincapital.substack.com/feed",
+    "email": "",
+    "portfolio_example": ""
+  },
+  {
+    "name": "Thiyagarajan Maruthavanan",
+    "firm": "Upekkha",
+    "thesis": "SaaS-focused accelerator and fund backing pre-seed Indian B2B SaaS and AI companies selling globally.",
+    "website": "https://www.upekkha.io",
+    "blog_rss": "",
+    "email": "",
+    "portfolio_example": ""
+  },
+  {
+    "name": "Manav Garg",
+    "firm": "Together Fund",
+    "thesis": "Founder-led fund (Freshworks/Eka founders) investing $250K-$3M at seed to Series A in SaaS/AI; Garg founded commodity supply chain software firm Eka.",
+    "website": "https://www.together.fund",
+    "blog_rss": "https://togetherfund.substack.com/feed",
+    "email": "deals@together.fund",
+    "portfolio_example": ""
+  },
+  {
+    "name": "Rahul Chandra",
+    "firm": "Arkam Ventures",
+    "thesis": "Early-stage fund backing 'Middle India' B2B platforms, SaaS and manufacturing tech; co-led Series A of manufacturing supply chain platform Karkhana.io.",
+    "website": "https://arkamventures.com",
+    "blog_rss": "",
+    "email": "",
+    "portfolio_example": "Karkhana.io"
+  },
+  {
+    "name": "Ankit Kedia",
+    "firm": "Capital A",
+    "thesis": "Seed-stage fund focused on manufacturing, industrial and deeptech startups, often leading rounds.",
+    "website": "https://capital-a.vc",
+    "blog_rss": "",
+    "email": "",
+    "portfolio_example": ""
+  },
+  {
+    "name": "Vishesh Rajaram",
+    "firm": "Speciale Invest",
+    "thesis": "Seed/early-stage deeptech fund (INR 600 Cr Fund III) covering advanced manufacturing, space, energy and AI.",
+    "website": "https://www.specialeinvest.com",
+    "blog_rss": "https://www.specialeinvest.com/blog-feed.xml",
+    "email": "",
+    "portfolio_example": ""
+  },
+  {
+    "name": "Manish Kheterpal",
+    "firm": "WaterBridge Ventures",
+    "thesis": "India-focused seed to Series A fund, leading 2025 seed rounds in B2B and commerce startups.",
+    "website": "https://waterbridge.vc",
+    "blog_rss": "",
+    "email": "",
+    "portfolio_example": ""
+  },
+  {
+    "name": "Santosh Sankar",
+    "firm": "Dynamo Ventures",
+    "thesis": "Pre-seed/seed specialist in supply chain, logistics, mobility and manufacturing; $54M Fund III (2025), typically leads seed rounds.",
+    "website": "https://www.dynamo.vc",
+    "blog_rss": "",
+    "email": "hello@dynamo.vc",
+    "portfolio_example": "Stord"
+  },
+  {
+    "name": "Ty Findley",
+    "firm": "Ironspring Ventures",
+    "thesis": "Austin-based seed/Series A fund for industrial tech: construction, manufacturing, transport & logistics.",
+    "website": "https://www.ironspring.com",
+    "blog_rss": "https://ironspring.com/feed/",
+    "email": "",
+    "portfolio_example": "OneRail"
+  },
+  {
+    "name": "Julian Counihan",
+    "firm": "Schematic Ventures",
+    "thesis": "Pre-seed/seed fund for supply chain, logistics, manufacturing and industrial software and automation.",
+    "website": "https://www.schematicventures.com",
+    "blog_rss": "https://schematicventures.substack.com/feed",
+    "email": "",
+    "portfolio_example": "Flock Freight"
+  },
+  {
+    "name": "Rachel Holt",
+    "firm": "Construct Capital",
+    "thesis": "Seed/Series A fund for foundational industries incl. logistics, supply chain, manufacturing and transportation.",
+    "website": "https://www.constructcap.com",
+    "blog_rss": "",
+    "email": "sayhello@constructcap.com",
+    "portfolio_example": "Nauta"
+  },
+  {
+    "name": "Will O'Donnell",
+    "firm": "Prologis Ventures",
+    "thesis": "Corporate VC of Prologis investing in digital freight, warehousing, automation and supply chain visibility tech.",
+    "website": "https://www.prologis.com",
+    "blog_rss": "",
+    "email": "",
+    "portfolio_example": ""
+  },
+  {
+    "name": "Ajay Agarwal",
+    "firm": "Bain Capital Ventures",
+    "thesis": "Seed-to-growth fund; Agarwal invests in logistics, supply chain software and physical AI (led FourKites Series A, ShipBob Series B).",
+    "website": "https://baincapitalventures.com",
+    "blog_rss": "",
+    "email": "",
+    "portfolio_example": "FourKites"
+  },
+  {
+    "name": "Joe Lonsdale",
+    "firm": "8VC",
+    "thesis": "Seed/early fund with a major logistics and supply chain thesis ($998M Fund VI, 2025); portfolio includes project44 and Platform Science.",
+    "website": "https://www.8vc.com",
+    "blog_rss": "",
+    "email": "",
+    "portfolio_example": "project44"
+  },
+  {
+    "name": "Lu Zhang",
+    "firm": "Fusion Fund",
+    "thesis": "Pre-seed to Series A fund backing enterprise AI, healthcare and industrial tech including logistics optimization.",
+    "website": "https://www.fusionfund.com",
+    "blog_rss": "",
+    "email": "",
+    "portfolio_example": ""
+  },
+  {
+    "name": "Karan Mohla",
+    "firm": "B Capital",
+    "thesis": "Global fund with India early-stage team backing B2B platforms and cross-border SaaS from pre-seed to Series A.",
+    "website": "https://b.capital",
+    "blog_rss": "https://b.capital/feed/",
+    "email": "info@b.capital",
+    "portfolio_example": "Bizongo"
+  },
+  {
+    "name": "Shweta Bhatia",
+    "firm": "Eight Roads Ventures",
+    "thesis": "Fidelity-backed fund investing in India enterprise tech and SaaS; first institutional investor in logistics company Shadowfax.",
+    "website": "https://eightroads.com",
+    "blog_rss": "",
+    "email": "",
+    "portfolio_example": "Shadowfax"
+  },
+  {
+    "name": "Reilly Brennan",
+    "firm": "Trucks Venture Capital",
+    "thesis": "Seed/pre-seed fund for transportation, freight and logistics tech ($70M Fund III, 2025).",
+    "website": "https://www.trucks.vc",
+    "blog_rss": "",
+    "email": "",
+    "portfolio_example": "Gatik"
+  },
+  {
+    "name": "Amit Anand",
+    "firm": "Jungle Ventures",
+    "thesis": "Singapore-based early-stage fund investing in India and SEA B2B and consumer tech; early backer of B2B industrial supply chain platform Moglix.",
+    "website": "https://www.jungle.vc",
+    "blog_rss": "",
+    "email": "contact@jungle.vc",
+    "portfolio_example": "Moglix"
+  },
+  {
+    "name": "Steve Sarracino",
+    "firm": "Activant Capital",
+    "thesis": "Investment firm backing companies that transform commerce infrastructure, including supply chain and logistics software.",
+    "website": "https://activantcapital.com",
+    "blog_rss": "https://activantcapital.com/rss.xml",
+    "email": "ecosystem@activantcapital.com",
+    "portfolio_example": "Deliverr"
+  },
+  {
+    "name": "Anirudh Garg",
+    "firm": "BEENEXT",
+    "thesis": "Singapore/Japan-based early-stage fund with a large India allocation, backing B2B, SaaS and platform startups.",
+    "website": "https://www.beenext.com",
+    "blog_rss": "https://www.beenext.com/feed/",
+    "email": "",
+    "portfolio_example": ""
+  },
+  {
+    "name": "Garry Tan",
+    "firm": "Y Combinator",
+    "thesis": "Pre-seed/seed accelerator investing in global B2B SaaS and AI startups including many Indian founders; backed Flexport.",
+    "website": "https://www.ycombinator.com",
+    "blog_rss": "https://www.ycombinator.com/blog/rss/",
+    "email": "",
+    "portfolio_example": "Flexport"
+  }
+]

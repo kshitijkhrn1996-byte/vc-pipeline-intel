@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VC Pipeline Intelligence</title>
+<style>
+:root {
+  color-scheme: light;
+  --page: #f7f7f4; --surface: #ffffff; --ink: #111110; --ink-2: #4f4e4a; --muted: #85837c;
+  --line: #e4e3dc; --ring: rgba(17,17,16,0.08);
+  --accent: #2a62d6; --accent-ink: #ffffff;
+  --go: #0b8a3e; --go-bg: #e6f5ec; --nudge: #a35d00; --nudge-bg: #fdf1dc;
+  --hold: #5b5bd6; --hold-bg: #ececfd; --quiet: #85837c; --quiet-bg: #efeee9; --bad: #c43a3a;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --page: #0f0f0e; --surface: #1a1a18; --ink: #f3f2ee; --ink-2: #c3c1b8; --muted: #8d8b83;
+    --line: #2d2d2a; --ring: rgba(255,255,255,0.08);
+    --accent: #5b8ff0; --go: #3ccf74; --go-bg: #12301f; --nudge: #f0a542; --nudge-bg: #33260f;
+    --hold: #9d9df5; --hold-bg: #22224a; --quiet: #9a988f; --quiet-bg: #242421; --bad: #f07272;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--page); color: var(--ink);
+  font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+.wrap { max-width: 1120px; margin: 0 auto; padding: 24px 16px 64px; }
+header { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; justify-content: space-between; }
+h1 { font-size: 24px; margin: 0; letter-spacing: -0.01em; }
+h2 { font-size: 17px; margin: 32px 0 4px; }
+.sub { color: var(--ink-2); margin: 2px 0 0; font-size: 14px; }
+.meta { display: flex; flex-wrap: wrap; gap: 8px 16px; color: var(--ink-2); font-size: 13px; margin-top: 14px; }
+.meta b { color: var(--ink); font-weight: 600; }
+.ok { color: var(--go); } .warn { color: var(--bad); }
+button, .btn { font: inherit; font-size: 14px; border-radius: 8px; padding: 7px 14px; cursor: pointer;
+  border: 1px solid var(--line); background: var(--surface); color: var(--ink); text-decoration: none; display: inline-block; }
+button.primary, .btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+button:disabled { opacity: .55; cursor: default; }
+.tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 18px; }
+.tile { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; }
+.tile .n { font-size: 26px; font-weight: 650; font-variant-numeric: tabular-nums; }
+.tile .l { font-size: 13px; color: var(--ink-2); }
+.hint { color: var(--muted); font-size: 13px; margin: 0 0 12px; }
+.cards { display: grid; gap: 12px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
+.row1 { display: flex; gap: 12px; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; }
+.who { font-weight: 600; font-size: 16px; } .firm { color: var(--ink-2); font-size: 14px; }
+.score { font-variant-numeric: tabular-nums; font-weight: 700; font-size: 20px; text-align: right; }
+.score small { display: block; font-size: 11px; font-weight: 500; color: var(--muted); }
+.pill { display: inline-block; font-size: 12px; font-weight: 600; border-radius: 999px; padding: 2px 10px; margin-top: 6px; }
+.p-REACH_OUT_NOW { background: var(--go-bg); color: var(--go); }
+.p-NUDGE_NOW { background: var(--nudge-bg); color: var(--nudge); }
+.p-HOLD_AWAITING_REPLY, .p-CONTINUE { background: var(--hold-bg); color: var(--hold); }
+.p-DEPRIORITISE, .p-SKIP_PASSED, .p-none { background: var(--quiet-bg); color: var(--quiet); }
+.why { margin: 10px 0 6px; font-size: 14px; color: var(--ink-2); }
+ul.ev { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
+ul.ev li { padding: 7px 0; border-bottom: 1px solid var(--line); font-size: 13.5px; display: flex; gap: 10px; }
+ul.ev .d { color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; min-width: 46px; }
+ul.ev a { color: var(--ink); } ul.ev .tag { color: var(--muted); font-size: 12px; white-space: nowrap; }
+.actions { margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap; }
+.mini { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 8px; }
+.mini .card { padding: 12px 14px; } .mini .why { margin: 4px 0 0; font-size: 13px; }
+details.card summary { cursor: pointer; }
+.table-wrap { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
+table { border-collapse: collapse; width: 100%; font-size: 13.5px; min-width: 980px; }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: 12px; color: var(--ink-2); font-weight: 600; background: var(--page); position: sticky; top: 0; }
+th.sys { color: var(--muted); }
+td.sys { color: var(--ink-2); background: color-mix(in srgb, var(--page) 60%, transparent); }
+td input, td select, td textarea { font: inherit; font-size: 13px; width: 100%; border: 1px solid var(--line);
+  border-radius: 6px; padding: 4px 6px; background: var(--surface); color: var(--ink); }
+td textarea { min-height: 54px; resize: vertical; }
+.saved { color: var(--go); font-size: 12px; }
+dialog { border: 1px solid var(--line); border-radius: 14px; padding: 0; width: min(640px, calc(100vw - 32px));
+  background: var(--surface); color: var(--ink); }
+dialog::backdrop { background: rgba(0,0,0,.35); }
+.dlg { padding: 18px; display: grid; gap: 10px; }
+.dlg label { font-size: 12px; color: var(--ink-2); display: grid; gap: 4px; }
+.dlg input, .dlg textarea { font: inherit; font-size: 14px; border: 1px solid var(--line); border-radius: 8px;
+  padding: 8px 10px; background: var(--page); color: var(--ink); }
+.dlg textarea { min-height: 220px; }
+.gate { max-width: 420px; margin: 18vh auto; padding: 0 16px; display: grid; gap: 10px; }
+.gate input { font: inherit; padding: 9px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+.empty { color: var(--muted); font-size: 14px; padding: 6px 0; }
+@media (max-width: 640px) { .tiles { grid-template-columns: repeat(2, 1fr); } h1 { font-size: 20px; } }
+</style>
+</head>
+<body>
+<div id="app" class="wrap"><p class="empty">Loading…</p></div>
+
+<dialog id="draft">
+  <form method="dialog" class="dlg">
+    <strong id="d-title">Email draft</strong>
+    <label>To<input id="d-to" placeholder="No public email on file: add one"></label>
+    <label>Subject<input id="d-subject"></label>
+    <label>Body<textarea id="d-body"></textarea></label>
+    <div class="actions">
+      <a class="btn primary" id="d-gmail" target="_blank" rel="noopener">Open in Gmail</a>
+      <a class="btn" id="d-mailto">Open in mail app</a>
+      <button type="button" id="d-copy">Copy</button>
+      <button value="close">Close</button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+const params = new URLSearchParams(location.search);
+let KEY = params.get('key') || (() => { try { return localStorage.getItem('vc_key'); } catch { return null; } })();
+if (params.get('key')) { try { localStorage.setItem('vc_key', KEY); } catch {} }
+let DATA = null;
+
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '–';
+const fmtTime = (d) => d ? new Date(d).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }) : '–';
+const STATUS = { yet_to_reach_out: 'Yet to reach out', waiting_response: 'Waiting for response', in_conversation: 'In conversation', passed: 'Passed' };
+
+async function api(path, opts = {}) {
+  const sep = path.includes('?') ? '&' : '?';
+  const res = await fetch(`${path}${sep}key=${encodeURIComponent(KEY)}`, {
+    ...opts, headers: { 'Content-Type': 'application/json', ...(opts.headers || {}) } });
+  if (res.status === 401) { gate('That key was not accepted.'); throw new Error('unauthorised'); }
+  const body = await res.json();
+  if (!res.ok) throw new Error(body.error || res.statusText);
+  return body;
+}
+
+function gate(msg = '') {
+  $('#app').innerHTML = `<div class="gate"><h1>VC Pipeline Intelligence</h1>
+    <p class="sub">Enter the dashboard key.</p><input id="k" type="password" autocomplete="off">
+    <button class="primary" id="go">Open</button><span class="warn">${esc(msg)}</span></div>`;
+  $('#go').onclick = () => { KEY = $('#k').value.trim(); try { localStorage.setItem('vc_key', KEY); } catch {} load(); };
+}
+
+async function load() {
+  if (!KEY) return gate();
+  DATA = await api('/api/vcs');
+  render();
+}
+
+const code = (v) => v.check?.action_code || 'none';
+
+function evidence(v) {
+  if (!v.evidence.length) return '';
+  const seen = new Set();
+  const rows = v.evidence.filter((s) => { const k = s.summary; if (seen.has(k)) return false; seen.add(k); return true; }).slice(0, 4);
+  return `<ul class="ev">${rows.map((s) => `<li><span class="d">${fmtDate(s.published)}</span>
+    <span><a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.title)}</a><br>
+    <span class="tag">${esc(s.type)} · ${['off-topic', 'general', 'B2B/SaaS', 'logistics'][s.relevance]} · ${esc(s.source)}${s.summary?.includes('[firm]') ? ' · firm signal' : ''}</span></span></li>`).join('')}</ul>`;
+}
+
+function card(v) {
+  const hasDraft = v.check?.draft_body;
+  return `<div class="card"><div class="row1"><div><div class="who">${esc(v.name)}</div>
+    <div class="firm">${esc(v.firm)} · ${STATUS[v.status]}${v.last_contact ? ` · last contact ${fmtDate(v.last_contact)}` : ''}</div>
+    <span class="pill p-${code(v)}">${esc(v.recommended_action || 'Not checked yet')}</span></div>
+    <div class="score">${v.follow_up_score ?? '–'}<small>follow-up score</small></div></div>
+    <p class="why">${esc(v.signal_summary || '')}</p>${evidence(v)}
+    <div class="actions">${hasDraft ? `<button class="primary" data-draft="${v.id}">Email draft</button>` : ''}
+    ${v.notes ? `<span class="hint" style="margin:6px 0 0">Your note: ${esc(v.notes)}</span>` : ''}</div></div>`;
+}
+
+function mini(v) {
+  return `<div class="card"><div class="row1"><div><div class="who" style="font-size:15px">${esc(v.name)}</div>
+    <div class="firm">${esc(v.firm)}</div></div><div class="score" style="font-size:16px">${v.follow_up_score ?? '–'}</div></div>
+    <span class="pill p-${code(v)}">${esc(v.recommended_action || 'Not checked yet')}</span>
+    <p class="why">${esc(v.signal_summary || '')}</p></div>`;
+}
+
+function render() {
+  const vcs = DATA.vcs, run = DATA.last_run;
+  const by = (codes) => vcs.filter((v) => codes.includes(code(v)));
+  const go = by(['REACH_OUT_NOW', 'NUDGE_NOW']), prog = by(['HOLD_AWAITING_REPLY', 'CONTINUE']),
+        quiet = by(['DEPRIORITISE', 'SKIP_PASSED', 'none']);
+  const intact = run && run.protected_hash_after && run.protected_hash_before === run.protected_hash_after;
+
+  $('#app').innerHTML = `
+  <header><div><h1>VC Pipeline Intelligence</h1>
+    <p class="sub">Who is worth reaching out to this week, and why. Signals from the last 30 days.</p></div>
+    <button class="primary" id="run">Run now</button></header>
+  <div class="meta">
+    <span>Last run: <b>${fmtTime(run?.finished_at)}</b> (${esc(run?.trigger || '–')}, ${esc(run?.status || 'never')})</span>
+    <span>${run?.vcs_checked ?? 0} VCs checked · ${run?.signals_found ?? 0} signals</span>
+    <span>Auto-runs Mon &amp; Thu, 6:30 am IST</span>
+    <span class="${intact ? 'ok' : 'warn'}">${run ? (intact ? '✓ Your notes &amp; contact history untouched by the last run' : '⚠ Pipeline columns changed during the run (or you edited mid-run)') : ''}</span>
+    <span id="runstate"></span>
+  </div>
+  <div class="tiles">
+    <div class="tile"><div class="n">${by(['REACH_OUT_NOW']).length}</div><div class="l">Reach out now</div></div>
+    <div class="tile"><div class="n">${by(['NUDGE_NOW']).length}</div><div class="l">Nudge now</div></div>
+    <div class="tile"><div class="n">${prog.length}</div><div class="l">In progress / hold</div></div>
+    <div class="tile"><div class="n">${quiet.length}</div><div class="l">Quiet: skip this week</div></div>
+  </div>
+
+  <h2>Worth reaching out to this week</h2>
+  <p class="hint">Each has an observable signal from the last 30 days. Open the links to check, then send the draft.</p>
+  <div class="cards">${go.map(card).join('') || '<p class="empty">No VC has a strong signal right now.</p>'}</div>
+
+  <h2>In progress</h2>
+  <p class="hint">Awaiting a reply you sent recently, or already in conversation.</p>
+  <div class="mini">${prog.map(mini).join('') || '<p class="empty">Nothing here.</p>'}</div>
+
+  <h2>Quiet: don't spend energy here this week</h2>
+  <p class="hint">No relevant public activity in 30 days, or they passed.</p>
+  <div class="mini">${quiet.map(mini).join('')}</div>
+
+  <h2>Your pipeline</h2>
+  <p class="hint">The white columns are yours, and the pipeline never writes them. The shaded columns are updated by each run.</p>
+  <div class="table-wrap"><table><thead><tr>
+    <th>VC</th><th>Status</th><th>Last contact</th><th>Email</th><th style="min-width:200px">Contact history</th><th style="min-width:220px">Notes</th>
+    <th class="sys">Last signal</th><th class="sys">Score</th><th class="sys" style="min-width:220px">Signal summary</th><th class="sys">Action</th><th></th>
+  </tr></thead><tbody>${[...vcs].sort((a, b) => a.id - b.id).map(row).join('')}</tbody></table></div>`;
+
+  $('#run').onclick = runNow;
+  document.querySelectorAll('[data-draft]').forEach((b) => b.onclick = () => openDraft(+b.dataset.draft));
+  document.querySelectorAll('[data-save]').forEach((b) => b.onclick = () => save(+b.dataset.save));
+}
+
+function row(v) {
+  return `<tr data-row="${v.id}"><td><b>${esc(v.name)}</b><br><span class="firm">${esc(v.firm)}</span></td>
+    <td><select data-f="status">${Object.entries(STATUS).map(([k, l]) => `<option value="${k}" ${k === v.status ? 'selected' : ''}>${l}</option>`).join('')}</select></td>
+    <td><input type="date" data-f="last_contact" value="${esc(v.last_contact || '')}"></td>
+    <td><input data-f="email" value="${esc(v.email || '')}"></td>
+    <td><textarea data-f="contact_history">${esc(v.contact_history || '')}</textarea></td>
+    <td><textarea data-f="notes">${esc(v.notes || '')}</textarea></td>
+    <td class="sys">${fmtDate(v.last_signal_date)}</td><td class="sys">${v.follow_up_score ?? '–'}</td>
+    <td class="sys">${esc(v.signal_summary || '')}</td><td class="sys">${esc(v.recommended_action || '')}</td>
+    <td><button data-save="${v.id}">Save</button><div class="saved" data-msg="${v.id}"></div></td></tr>`;
+}
+
+async function save(id) {
+  const tr = document.querySelector(`[data-row="${id}"]`);
+  const body = { id };
+  tr.querySelectorAll('[data-f]').forEach((el) => body[el.dataset.f] = el.value);
+  const msg = document.querySelector(`[data-msg="${id}"]`);
+  try {
+    const updated = await api('/api/vcs', { method: 'PATCH', body: JSON.stringify(body) });
+    Object.assign(DATA.vcs.find((v) => v.id === id), updated);
+    msg.textContent = 'Saved';
+  } catch (e) { msg.textContent = e.message; msg.className = 'warn'; }
+}
+
+function openDraft(id) {
+  const v = DATA.vcs.find((x) => x.id === id);
+  $('#d-title').textContent = `Email draft: ${v.name}, ${v.firm}`;
+  $('#d-to').value = v.email || '';
+  $('#d-subject').value = v.check.draft_subject || '';
+  $('#d-body').value = v.check.draft_body || '';
+  const sync = () => {
+    const to = $('#d-to').value, su = $('#d-subject').value, body = $('#d-body').value;
+    $('#d-gmail').href = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(to)}&su=${encodeURIComponent(su)}&body=${encodeURIComponent(body)}`;
+    $('#d-mailto').href = `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(su)}&body=${encodeURIComponent(body)}`;
+  };
+  ['#d-to', '#d-subject', '#d-body'].forEach((s) => $(s).oninput = sync);
+  sync();
+  $('#d-copy').onclick = async () => {
+    await navigator.clipboard.writeText(`Subject: ${$('#d-subject').value}\n\n${$('#d-body').value}`);
+    $('#d-copy').textContent = 'Copied';
+  };
+  $('#draft').showModal();
+}
+
+async function runNow() {
+  const btn = $('#run'), state = $('#runstate');
+  btn.disabled = true;
+  let runId = null, total = 0;
+  try {
+    for (let step = 0; step < 6; step++) {
+      state.textContent = `Running… ${total} VCs checked`;
+      const r = await api('/api/run', { method: 'POST', body: JSON.stringify({ run_id: runId }) });
+      runId = r.run_id; total += r.checked;
+      if (!r.remaining) break;
+    }
+    await load();
+  } catch (e) { state.textContent = `Run failed: ${e.message}`; state.className = 'warn'; btn.disabled = false; }
+}
+
+load().catch((e) => { if (e.message !== 'unauthorised') $('#app').innerHTML = `<p class="warn">${esc(e.message)}</p>`; });
+</script>
+</body>
+</html>

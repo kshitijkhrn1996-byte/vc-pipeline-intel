@@ -1,0 +1,108 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Components Map</title>
+<style>
+* { box-sizing: border-box; }
+body { margin: 0; background: #fff; font-family: "Segoe UI", Arial, sans-serif; color: #10203a; width: 1840px; }
+h1 { text-align: center; font-size: 34px; margin: 26px 0 20px; color: #0f1f3d; }
+.grid { position: relative; margin: 0 20px 24px; display: grid;
+  grid-template-columns: 190px repeat(6, 1fr); grid-template-rows: 70px repeat(6, auto);
+  border-radius: 12px; overflow: hidden; }
+.h { background: #13294b; color: #fff; font-size: 22px; font-weight: 600; display: flex; align-items: center; justify-content: center; border-right: 1px solid #2b416a; }
+.actor { background: #13294b; color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  font-size: 21px; font-weight: 600; border-top: 1px solid #2b416a; text-align: center; padding: 8px; }
+.actor small { font-size: 15px; font-weight: 400; color: #c9d6ee; margin-top: 4px; }
+.cell { border-right: 1px solid rgba(0,0,0,.06); padding: 16px 12px; display: flex; flex-direction: column; gap: 12px; justify-content: center; min-height: 150px; }
+.r1 { background: #eaf2fe; } .r2 { background: #f3effd; } .r3 { background: #fdf9e6; }
+.r4 { background: #e9f8ef; } .r5 { background: #fdeef5; } .r6 { background: #eef6fb; }
+.box { border: 2px solid; border-radius: 10px; padding: 11px 12px; font-size: 16px; line-height: 1.32; text-align: center; background: #fff; position: relative; z-index: 2; }
+.box b { display: block; font-size: 16.5px; margin-bottom: 2px; }
+.box small { display: block; font-size: 13.5px; color: #4a5a75; margin-top: 3px; }
+.blue { border-color: #2f6fe0; background: #eef4ff; } .violet { border-color: #6b55e0; background: #f1eeff; }
+.amber { border-color: #e39b12; background: #fff6e2; } .green { border-color: #1e9e57; background: #eafaf0; }
+.pink { border-color: #d6418a; background: #ffeef6; } .red { border-color: #e0483e; background: #fff0ee; }
+.teal { border-color: #138a9e; background: #e8f8fb; }
+svg.wires { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none; overflow: visible; }
+.legend { margin: 0 20px 24px; font-size: 15px; color: #42506a; display: flex; gap: 28px; flex-wrap: wrap; }
+.legend span::before { content: ""; display: inline-block; width: 26px; border-top: 2px dashed #13294b; vertical-align: middle; margin-right: 8px; }
+.legend .n::before { border-top: 2px dashed #c0392b; }
+</style></head>
+<body>
+<h1>VC Fundraising Pipeline Intelligence: Components Map</h1>
+<div class="grid" id="g">
+  <div class="h">Actor</div><div class="h">Trigger</div><div class="h">Input</div><div class="h">Context</div>
+  <div class="h">Processing</div><div class="h">AI</div><div class="h">Output</div>
+
+  <!-- Founder -->
+  <div class="actor">Founder<small>(Vikram)</small></div>
+  <div class="cell r1"><div class="box violet" id="manual"><b>Clicks "Run now"</b>on the dashboard (optional)</div></div>
+  <div class="cell r1"></div>
+  <div class="cell r1"><div class="box blue" id="edit"><b>Edits his own columns</b>status, last contact, contact history, notes<small>never written by the pipeline</small></div></div>
+  <div class="cell r1"></div><div class="cell r1"></div>
+  <div class="cell r1"><div class="box red" id="dash"><b>Dashboard</b>Reach out now · Nudge · Quiet lists, evidence links, follow-up score, Gmail-ready drafts<small>vc-pipeline-intel.vercel.app</small></div></div>
+
+  <!-- Scheduler -->
+  <div class="actor">Scheduler<small>(Vercel Cron)</small></div>
+  <div class="cell r2"><div class="box violet" id="cron"><b>Twice a week</b>Mon &amp; Thu, 6:30 am IST<small>+ 8:30 am catch-up run</small></div></div>
+  <div class="cell r2"></div><div class="cell r2"></div><div class="cell r2"></div><div class="cell r2"></div><div class="cell r2"></div>
+
+  <!-- Backend -->
+  <div class="actor">System<small>(Vercel functions)</small></div>
+  <div class="cell r3"></div>
+  <div class="cell r3"><div class="box amber" id="run"><b>/api/run</b>picks VCs not checked in this run, in chunks under a 240 s budget</div></div>
+  <div class="cell r3"><div class="box amber" id="val"><b>Evidence validator</b>real URL · dated · within 30 days · de-duplicated</div></div>
+  <div class="cell r3"><div class="box amber" id="score"><b>Scoring + action rules</b>type × relevance × recency, one count per event<small>score × status × days since last contact → action</small></div></div>
+  <div class="cell r3"></div><div class="cell r3"></div>
+
+  <!-- Live sources -->
+  <div class="actor">Live sources<small>(public web)</small></div>
+  <div class="cell r4"></div><div class="cell r4"></div>
+  <div class="cell r4"><div class="box green" id="src"><b>Signal collectors</b>Google News RSS (partner + firm deals), firm blog / Medium / Substack RSS</div></div>
+  <div class="cell r4"></div><div class="cell r4"></div><div class="cell r4"></div>
+
+  <!-- AI -->
+  <div class="actor">AI model<small>(Gemini Flash)</small></div>
+  <div class="cell r5"></div><div class="cell r5"></div>
+  <div class="cell r5"><div class="box pink" id="ground"><b>Search fallback</b>Gemini + Google Search grounding when feeds find nothing relevant<small>each URL must load</small></div></div>
+  <div class="cell r5"></div>
+  <div class="cell r5"><div class="box pink" id="ai"><b>Classify each item</b>partner / firm / neither · type · relevance 0–3 · event id<small>structured JSON</small></div>
+    <div class="box pink" id="draft"><b>Write outreach drafts</b>opens with the VC's specific signal, for Reach out / Nudge</div></div>
+  <div class="cell r5"></div>
+
+  <!-- Database -->
+  <div class="actor">Database<small>(Supabase)</small></div>
+  <div class="cell r6"></div>
+  <div class="cell r6"><div class="box teal" id="db"><b>vcs table</b>50 VCs: name, firm, thesis, status, last contact, notes</div></div>
+  <div class="cell r6"></div><div class="cell r6"></div><div class="cell r6"></div>
+  <div class="cell r6"><div class="box teal" id="write"><b>apply_signal()</b>writes ONLY last signal date, signal summary, follow-up score, recommended action<small>trigger blocks other columns · notes fingerprint checked</small></div></div>
+  <svg class="wires" id="w"><defs><marker id="a" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#13294b"/></marker>
+  <marker id="ar" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#c0392b"/></marker></defs></svg>
+</div>
+<div class="legend"><span>Data flow, in order</span><span class="n">Search fallback (only when feeds have nothing relevant)</span></div>
+<script>
+const g = document.getElementById('g'), svg = document.getElementById('w');
+const R = (id) => { const e = document.getElementById(id).getBoundingClientRect(), o = g.getBoundingClientRect();
+  return { l: e.left - o.left, r: e.right - o.left, t: e.top - o.top, b: e.bottom - o.top, cx: (e.left + e.right) / 2 - o.left, cy: (e.top + e.bottom) / 2 - o.top }; };
+function wire(pts, red) {
+  const p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  p.setAttribute('d', 'M' + pts.map((q) => q.join(',')).join(' L'));
+  p.setAttribute('fill', 'none'); p.setAttribute('stroke', red ? '#c0392b' : '#13294b');
+  p.setAttribute('stroke-width', '2'); p.setAttribute('stroke-dasharray', '6 5');
+  p.setAttribute('marker-end', red ? 'url(#ar)' : 'url(#a)'); svg.appendChild(p);
+}
+const cron = R('cron'), manual = R('manual'), run = R('run'), db = R('db'), src = R('src'), val = R('val'),
+  ai = R('ai'), score = R('score'), draft = R('draft'), write = R('write'), dash = R('dash'), ground = R('ground'), edit = R('edit');
+const mx = (a, b) => (a.r + b.l) / 2;
+wire([[cron.r, cron.cy], [mx(cron, run), cron.cy], [mx(cron, run), run.cy], [run.l, run.cy]]);
+wire([[manual.r, manual.cy], [mx(manual, run) + 8, manual.cy], [mx(manual, run) + 8, run.cy - 14], [run.l, run.cy - 14]]);
+wire([[run.cx, run.b], [run.cx, db.t]]);
+wire([[db.r - 34, db.t], [db.r - 34, src.cy], [src.l, src.cy]]);
+wire([[src.cx, src.t], [src.cx, val.b]]);
+wire([[val.r, val.cy], [mx(val, score), val.cy], [mx(val, score), ai.cy], [ai.l, ai.cy]]);
+wire([[ai.cx - 30, ai.t], [ai.cx - 30, score.cy], [score.r, score.cy]]);
+wire([[score.cx, score.b], [score.cx, draft.cy], [draft.l, draft.cy]]);
+wire([[draft.r, draft.cy], [mx(draft, write), draft.cy], [mx(draft, write), write.t - 14], [write.cx, write.t - 14], [write.cx, write.t]]);
+wire([[write.r - 16, write.t], [write.r - 16, dash.b]]);
+wire([[src.cx + 40, src.b], [src.cx + 40, ground.t]], true);
+wire([[ground.l + 14, ground.t], [ground.l + 14, ground.t - 20], [val.l - 16, ground.t - 20], [val.l - 16, val.cy], [val.l, val.cy]], true);
+</script>
+</body></html>
