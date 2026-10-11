@@ -84,6 +84,7 @@ npx vercel deploy --prod
 - A deal by the firm counts as a signal for the partner on the list, labelled "Firm activity".
 - Investor-database pages (Tracxn, Crunchbase, …) are filtered out: they list old rounds, not something the VC did.
 - LinkedIn and X posts are not covered (no free API; scraping breaks their terms).
+- The dashboard is open (no key) for the demo. Setting `DASHBOARD_KEY` in Vercel locks it again; a second "Run now" joins a run already in progress instead of duplicating it.
 - VC emails are public firm-level addresses only. Vikram's status, history and notes in the seed data are fictional.
 
 MIT licence.

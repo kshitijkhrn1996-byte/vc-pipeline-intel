@@ -1,7 +1,8 @@
 // Shared helpers for the Vercel functions.
 
+// The dashboard is open unless DASHBOARD_KEY is set; then requests must carry ?key=.
 export function isOwner(req) {
-  return Boolean(process.env.DASHBOARD_KEY) && req.query?.key === process.env.DASHBOARD_KEY;
+  return !process.env.DASHBOARD_KEY || req.query?.key === process.env.DASHBOARD_KEY;
 }
 
 // Wraps a handler with owner auth, no-store caching and JSON errors.

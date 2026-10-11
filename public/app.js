@@ -4,8 +4,10 @@
 const params = new URLSearchParams(location.search);
 const store = { get: (k) => { try { return localStorage.getItem(k); } catch { return null; } },
                 set: (k, v) => { try { localStorage.setItem(k, v); } catch {} } };
+// Only needed if the server sets DASHBOARD_KEY; otherwise the dashboard is open.
 let KEY = params.get('key') || store.get('vc_key');
 if (params.get('key')) store.set('vc_key', KEY);
+const withKey = (path) => KEY ? `${path}${path.includes('?') ? '&' : '?'}key=${encodeURIComponent(KEY)}` : path;
 if (store.get('vc_theme')) document.documentElement.dataset.theme = store.get('vc_theme');
 
 let DATA = null, FILTER = 'all', QUERY = '', RUNNING = false;
@@ -32,9 +34,8 @@ const flags = (v) => v.change?.flags || [];
 
 // ---------- api ----------
 async function api(path, opts = {}) {
-  const sep = path.includes('?') ? '&' : '?';
-  const res = await fetch(`${path}${sep}key=${encodeURIComponent(KEY)}`, { ...opts, headers: { 'Content-Type': 'application/json' } });
-  if (res.status === 401) { gate('That key was not accepted. Check it and try again.'); throw new Error('unauthorised'); }
+  const res = await fetch(withKey(path), { ...opts, headers: { 'Content-Type': 'application/json' } });
+  if (res.status === 401) { gate(KEY ? 'That key was not accepted. Check it and try again.' : ''); throw new Error('unauthorised'); }
   let body = {};
   try { body = await res.json(); } catch {}
   if (!res.ok) throw new Error(body.error || `Request failed (${res.status})`);
@@ -53,7 +54,6 @@ function gate(msg = '') {
 }
 
 async function load() {
-  if (!KEY) return gate();
   if (!DATA) $('#app').innerHTML = `<div class="band"><div class="wrap">${topbar(0)}</div></div><main class="wrap"><div class="queue"><div class="skel"></div><div class="skel"></div></div></main>`;
   DATA = await api('/api/vcs');
   render();
@@ -247,7 +247,7 @@ function railRun(run, intact) {
       <div><strong>Never writes</strong>Status, last contact, contact history, notes, email</div></div>
     <div class="history">${hist}</div>
     <div class="mail-acts" style="margin-top:12px"><button class="btn sm" id="digest" type="button">✉ Email me this brief</button>
-      <a class="btn sm" href="/api/actions?preview=digest&key=${encodeURIComponent(KEY)}" target="_blank" rel="noopener">Preview email</a></div></section>`;
+      <a class="btn sm" href="${withKey('/api/actions?preview=digest')}" target="_blank" rel="noopener">Preview email</a></div></section>`;
 }
 function railMix(vcs) {
   const all = vcs.flatMap((v) => events(v));
@@ -590,6 +590,15 @@ async function runNow() {
     for (let step = 0; step < 6; step++) {
       const r = await api('/api/run', { method: 'POST', body: JSON.stringify({ run_id: runId }) });
       runId = r.run_id;
+      if (r.joined) { // someone else's run is in progress: wait for it rather than run twice
+        $('#ptext').textContent = 'A run is already in progress. Showing its progress…';
+        for (let i = 0; i < 100; i++) {
+          await new Promise((ok) => setTimeout(ok, 3000));
+          const s = await api('/api/status');
+          if (s.run?.id !== runId || !['running'].includes(s.run.status)) break;
+        }
+        break;
+      }
       if (!r.remaining) break;
     }
     clearInterval(poll); RUNNING = false;
