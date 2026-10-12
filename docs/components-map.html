@@ -36,7 +36,7 @@ svg.wires { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1;
   <div class="actor">Founder<small>(Vikram)</small></div>
   <div class="cell r1"><div class="box violet" id="manual"><b>Clicks "Run now"</b>on the dashboard (optional)</div></div>
   <div class="cell r1"></div>
-  <div class="cell r1"><div class="box blue" id="edit"><b>His own actions</b>edits notes &amp; status, adds / imports VCs, marks emails sent, rates signals 👍/👎<small>👎 signals are excluded from future runs</small></div></div>
+  <div class="cell r1"><div class="box blue" id="edit"><b>His own actions</b>edits notes &amp; status, adds / imports VCs, archives / restores VCs, marks emails sent, rates signals 👍/👎<small>👎 signals are excluded from future runs</small></div></div>
   <div class="cell r1"></div><div class="cell r1"></div>
   <div class="cell r1"><div class="box red" id="dash"><b>Dashboard</b>Reach out now · Nudge · Quiet lists, evidence links, follow-up score, Gmail-ready drafts<small>vc-pipeline-intel.vercel.app</small></div></div>
 
@@ -73,7 +73,9 @@ svg.wires { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1;
   <div class="actor">Database<small>(Supabase)</small></div>
   <div class="cell r6"></div>
   <div class="cell r6"><div class="box teal" id="db"><b>vcs table</b>50 VCs: name, firm, thesis, status, last contact, notes</div></div>
-  <div class="cell r6"></div><div class="cell r6"></div><div class="cell r6"></div>
+  <div class="cell r6"></div>
+  <div class="cell r6"><div class="box teal" id="arch"><b>Auto-archive · vc_archive</b>after each run: no public signal for 60 days → archived; runs skip it<small>never while in conversation · notes kept · 1-click restore</small></div></div>
+  <div class="cell r6"></div>
   <div class="cell r6"><div class="box teal" id="write"><b>apply_signal()</b>writes ONLY last signal date, signal summary, follow-up score, recommended action<small>trigger blocks other columns · notes fingerprint checked</small></div></div>
   <svg class="wires" id="w"><defs><marker id="a" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#13294b"/></marker>
   <marker id="ar" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#c0392b"/></marker></defs></svg>
@@ -101,6 +103,8 @@ wire([[src.cx, src.t], [src.cx, val.b]]);
 wire([[val.r, val.cy], [mx(val, score), val.cy], [mx(val, score), ai.cy], [ai.l, ai.cy]]);
 wire([[ai.cx - 30, ai.t], [ai.cx - 30, score.cy], [score.r, score.cy]]);
 wire([[score.cx, score.b], [score.cx, draft.cy], [draft.l, draft.cy]]);
+const arch = R('arch');
+wire([[score.l + 26, score.b], [score.l + 26, arch.t]]);
 wire([[draft.r, draft.cy], [mx(draft, write), draft.cy], [mx(draft, write), write.t - 14], [write.cx, write.t - 14], [write.cx, write.t]]);
 wire([[write.r - 16, write.t], [write.r - 16, dash.b]]);
 const mail = R('mail');
