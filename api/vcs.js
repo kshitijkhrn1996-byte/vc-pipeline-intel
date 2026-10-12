@@ -7,6 +7,7 @@ import { db, q } from '../src/db/client.js';
 import { ownerRoute, badRequest } from '../src/http.js';
 import { changesSince } from '../src/core/changes.js';
 import { checkVcs, reapplyAction } from '../src/pipeline/run.js';
+import { ARCHIVE_AFTER_DAYS } from '../src/core/archive.js';
 
 export const config = { maxDuration: 60 };
 
@@ -25,7 +26,12 @@ export default ownerRoute(async (req, res) => {
     if (!row.name || !row.firm) throw badRequest('Name and firm are required.');
     if (row.status && !STATUSES.includes(row.status)) throw badRequest('Unknown status.');
     const { data, error } = await db.from('vcs').insert(row).select();
-    if (error) throw badRequest(error.code === '23505' ? `${row.name} at ${row.firm} is already in the pipeline.` : error.message);
+    if (error?.code === '23505') {
+      const [dup] = await q(db.from('vcs').select('id').eq('name', row.name).eq('firm', row.firm));
+      const [arch] = dup ? await q(db.from('vc_archive').select('id').eq('vc_id', dup.id).is('restored_at', null)) : [];
+      throw badRequest(arch ? `${row.name} at ${row.firm} is archived. Restore them from the Archived list.` : `${row.name} at ${row.firm} is already in the pipeline.`);
+    }
+    if (error) throw badRequest(error.message);
     await checkVcs([data[0].id]);
     const [vc] = await q(db.from('vcs').select('*').eq('id', data[0].id));
     return res.status(201).json(vc);
@@ -43,11 +49,14 @@ export default ownerRoute(async (req, res) => {
     return res.status(200).json(row);
   }
 
-  const [vcs, runs, feedback] = await Promise.all([
+  const [allVcs, runs, feedback, archive] = await Promise.all([
     q(db.from('vcs').select('*').order('follow_up_score', { ascending: false, nullsFirst: false })),
     q(db.from('signal_runs').select('*').neq('trigger', 'single').order('id', { ascending: false }).limit(5)),
     q(db.from('signal_feedback').select('vc_id, url, verdict')),
+    q(db.from('vc_archive').select('*').is('restored_at', null)),
   ]);
+  const archivedBy = new Map(archive.map((a) => [a.vc_id, a]));
+  const vcs = allVcs.filter((v) => !archivedBy.has(v.id));
   const lastDone = runs.find((r) => r.status !== 'running' && r.status !== 'failed') || null;
 
   // Recent checks per VC, newest first.
@@ -73,7 +82,10 @@ export default ownerRoute(async (req, res) => {
   res.status(200).json({
     runs,
     last_run: lastDone,
+    archive_after_days: ARCHIVE_AFTER_DAYS,
     feedback: { rated, useful, precision: rated ? Math.round((useful / rated) * 100) : null },
+    archived: allVcs.filter((v) => archivedBy.has(v.id)).map((v) => ({ ...v, archive: archivedBy.get(v.id) }))
+      .sort((a, b) => b.archive.archived_at.localeCompare(a.archive.archived_at)),
     vcs: vcs.map((v) => {
       const h = history.get(v.id) || [];
       const ev = (evidence.get(v.id) || []).map((s) => ({ ...s, verdict: verdicts.get(`${v.id}|${s.url}`) || null }));

@@ -28,6 +28,7 @@ of his Supabase table and never touches his notes or contact history.
 - **Email drafts:** open with the VC's specific signal; Open in Gmail, Copy, then **Mark as sent** (status → waiting, last contact → today, history line added, action → hold).
 - **Feedback loop:** 👍/👎 on any signal. 👎 removes it from future runs for that VC; the ratings give a live accuracy figure.
 - **Pipeline management:** add a VC (checked within seconds), import Vikram's spreadsheet as CSV, export CSV, edit his own columns.
+- **Archive:** VCs with no public signal for 60 days (`ARCHIVE_AFTER_DAYS`) are archived automatically after a run, never ones he is in conversation with; he can also archive any VC by hand. Archived VCs are skipped by runs, keep their notes, and come back with one click. Archive state lives in its own table, so runs still write only the four signal columns.
 - **Run proof:** which columns a run writes and never writes, and a "notes safe" check on every run.
 
 ## Architecture
@@ -38,10 +39,10 @@ of his Supabase table and never touches his notes or contact history.
 api/                      Vercel functions (thin: auth → src → JSON)
   run.js                  cron + "Run now"; resumable under a 240 s budget
   vcs.js                  list / add / edit VCs (Vikram's columns only)
-  actions.js              mark sent · feedback · CSV import · send / preview digest
+  actions.js              mark sent · feedback · CSV import · archive / restore · send / preview digest
   status.js               live run progress
 src/
-  core/                   pure, unit-tested logic: scoring, actions, validate, changes
+  core/                   pure, unit-tested logic: scoring, actions, validate, changes, citation, archive
   sources/                google-news, blog-rss, web-search (Gemini grounding), rss parser
   ai/                     gemini-client, classify, draft-email
   pipeline/run.js         collect → validate → classify → score → act → draft → apply_signal()

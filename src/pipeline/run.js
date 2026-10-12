@@ -12,6 +12,7 @@ import { itemPoints, scoreVc } from '../core/scoring.js';
 import { decideAction, DRAFT_ACTIONS } from '../core/actions.js';
 import { todayIst } from '../config.js';
 import { sendDigest } from '../notify/digest.js';
+import { shouldArchive } from '../core/archive.js';
 
 const CHUNK = 10;            // VCs processed end-to-end per step
 const PARALLEL = 5;          // concurrent VCs within a chunk (feeds + Gemini)
@@ -36,8 +37,14 @@ export async function startRun(trigger) {
 }
 
 // VCs still to do in this run (not checked in this run or in the last FRESH_HOURS).
+// VCs currently archived (by the rule or by Vikram). Runs skip them.
+export async function archivedIds() {
+  return new Set((await q(db.from('vc_archive').select('vc_id').is('restored_at', null))).map((a) => a.vc_id));
+}
+
 async function pendingVcs(runId, force) {
-  const vcs = await q(db.from('vcs').select('*').order('id'));
+  const archived = await archivedIds();
+  const vcs = (await q(db.from('vcs').select('*').order('id'))).filter((v) => !archived.has(v.id));
   const since = new Date(Date.now() - FRESH_HOURS * 3_600_000).toISOString();
   let checks = db.from('vc_checks').select('vc_id, run_id, checked_at');
   if (force) checks = checks.eq('run_id', runId ?? 0);
@@ -173,9 +180,11 @@ export async function runPipeline({ trigger = 'manual', runId = null, force = fa
       status: remaining ? 'partial' : 'done',
       finished_at: new Date().toISOString(),
     }).eq('id', run.id));
+    // A complete run archives VCs that have been quiet past the window (kept in vc_archive, restorable).
+    const archived = remaining ? [] : await archiveStale(run.id, today).catch((e) => { console.error('archive:', e.message); return []; });
     // Scheduled runs email Vikram the brief once the whole pipeline is done.
     if (!remaining && run.trigger === 'cron') await sendDigest(run.id).catch((e) => console.error('digest:', e.message));
-    return { run_id: run.id, checked, signals: found, remaining, notes_untouched: hashAfter === run.protected_hash_before };
+    return { run_id: run.id, checked, signals: found, remaining, archived: archived.length, notes_untouched: hashAfter === run.protected_hash_before };
   } catch (err) {
     await db.from('signal_runs').update({ status: 'failed', error: String(err.message || err), finished_at: new Date().toISOString() }).eq('id', run.id);
     throw err;
@@ -210,4 +219,21 @@ export async function reapplyAction(vcId) {
   }));
   await q(db.from('vc_checks').update({ action_code: action.code }).eq('id', check.id));
   return action;
+}
+
+// Applies the auto-archive rule to every active VC. Writes only to vc_archive, never to vcs.
+export async function archiveStale(runId, today) {
+  const archived = await archivedIds();
+  const vcs = (await q(db.from('vcs').select('id, firm, status, last_signal_date'))).filter((v) => !archived.has(v.id));
+  const firstChecks = await q(db.from('vc_checks').select('vc_id, checked_at').order('checked_at', { ascending: true }));
+  const first = new Map();
+  for (const c of firstChecks) if (!first.has(c.vc_id)) first.set(c.vc_id, c.checked_at.slice(0, 10));
+  const restores = await q(db.from('vc_archive').select('vc_id, restored_at').not('restored_at', 'is', null));
+  const restored = new Map();
+  for (const r of restores) if (!restored.has(r.vc_id) || r.restored_at > restored.get(r.vc_id)) restored.set(r.vc_id, r.restored_at.slice(0, 10));
+  const rows = vcs.map((vc) => ({ vc, reason: shouldArchive({ vc, firstChecked: first.get(vc.id), lastRestored: restored.get(vc.id) }, today) }))
+    .filter((x) => x.reason)
+    .map(({ vc, reason }) => ({ vc_id: vc.id, archived_by: 'rule', reason, run_id: runId }));
+  if (rows.length) await q(db.from('vc_archive').insert(rows));
+  return rows;
 }

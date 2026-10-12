@@ -4,6 +4,7 @@
 //     { action: 'feedback', vc_id, url, title, verdict } → 'useful' | 'not_relevant' | null (clear)
 //     { action: 'import', rows: [{name, firm, ...}] }   → bulk add from CSV, skipping VCs already in the pipeline
 //     { action: 'send_digest' }                         → email the current brief now
+//     { action: 'archive', id, reason? } · { action: 'restore', id } → hide a VC from runs and the dashboard, or bring it back
 //   GET  /api/actions?key=KEY&preview=digest           → the brief email as HTML
 import { db, q } from '../src/db/client.js';
 import { ownerRoute, badRequest, istToday } from '../src/http.js';
@@ -62,6 +63,21 @@ export default ownerRoute(async (req, res) => {
       const { data, error } = await db.from('vcs').upsert(rows, { onConflict: 'name,firm', ignoreDuplicates: true }).select('id');
       if (error) throw badRequest(error.message);
       return res.status(200).json({ imported: data.length, skipped: rows.length - data.length });
+    }
+
+    case 'archive': {
+      const [vc] = await q(db.from('vcs').select('id, name').eq('id', body.id));
+      if (!vc) throw badRequest('VC not found.');
+      const { error } = await db.from('vc_archive').insert({ vc_id: vc.id, archived_by: 'vikram', reason: body.reason ? String(body.reason).slice(0, 200) : 'Archived by Vikram' });
+      if (error) throw badRequest(error.code === '23505' ? `${vc.name} is already archived.` : error.message);
+      return res.status(200).json({ ok: true });
+    }
+
+    case 'restore': {
+      const rows = await q(db.from('vc_archive').update({ restored_at: new Date().toISOString() })
+        .eq('vc_id', body.id).is('restored_at', null).select('id'));
+      if (!rows.length) throw badRequest('That VC is not archived.');
+      return res.status(200).json({ ok: true });
     }
 
     case 'send_digest':

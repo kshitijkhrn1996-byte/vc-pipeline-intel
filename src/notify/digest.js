@@ -6,8 +6,12 @@ const APP_URL = () => process.env.APP_URL || 'https://vc-pipeline-intel.vercel.a
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const clean = (s) => String(s || '').replace(/ \[firm\]/g, '');
 
-export async function buildDigest() {
-  const vcs = await q(db.from('vcs').select('id, name, firm, follow_up_score, signal_summary, last_signal_date'));
+export async function buildDigest(runId = null) {
+  const archive = await q(db.from('vc_archive').select('vc_id, run_id, reason').is('restored_at', null));
+  const archivedIds = new Set(archive.map((a) => a.vc_id));
+  const allVcs = await q(db.from('vcs').select('id, name, firm, follow_up_score, signal_summary, last_signal_date'));
+  const vcs = allVcs.filter((v) => !archivedIds.has(v.id));
+  const justArchived = runId ? allVcs.filter((v) => archive.some((a) => a.vc_id === v.id && a.run_id === runId)) : [];
   const checks = await q(db.from('vc_checks').select('vc_id, action_code, checked_at, draft_body').order('checked_at', { ascending: false }).limit(1000));
   const latest = new Map();
   for (const c of checks) if (!latest.has(c.vc_id)) latest.set(c.vc_id, c);
@@ -38,6 +42,7 @@ export async function buildDigest() {
       </table>
       ${go.length + nudge.length === 0 ? '<p style="font:14px Arial,sans-serif;color:#33405a">No VC has a strong enough signal this week.</p>' : ''}
       <p style="font:13px/1.5 Arial,sans-serif;color:#5b667c;margin-top:18px"><b>Quiet this week:</b> ${quiet.map((v) => esc(v.firm.replace(/\s*\(.*?\)/g, ''))).join(', ') || 'none'}.</p>
+      ${justArchived.length ? `<p style="font:13px/1.5 Arial,sans-serif;color:#5b667c"><b>Archived this run</b> (no public signal for a long time, restorable in the dashboard): ${justArchived.map((v) => esc(v.firm.replace(/\s*\(.*?\)/g, ''))).join(', ')}.</p>` : ''}
       <p style="margin:22px 0 4px"><a href="${APP_URL()}" style="background:#2747d6;color:#fff;text-decoration:none;padding:10px 16px;border-radius:8px;font:600 14px Arial,sans-serif">Open the dashboard</a></p>
       <p style="font:12px Arial,sans-serif;color:#8a94a8;margin-top:16px">Signals from the last 30 days · your notes and contact history were not changed.</p>
     </div></div>`;
@@ -53,7 +58,7 @@ export async function sendDigest(runId, { force = false } = {}) {
     const [run] = await q(db.from('signal_runs').select('digest_sent_at').eq('id', runId));
     if (run?.digest_sent_at) return { skipped: 'already sent' };
   }
-  const digest = await buildDigest();
+  const digest = await buildDigest(runId);
   const res = await fetch(process.env.DIGEST_WEBHOOK_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'text/plain' }, // avoids a CORS preflight Apps Script can't answer

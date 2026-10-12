@@ -205,6 +205,17 @@ function render() {
         <th>VC</th><th>Your status</th><th>Last contact</th><th>Score</th><th>Trend</th><th>Recommendation</th><th>Why</th>
       </tr></thead><tbody id="rows"></tbody></table></div>
     </section>
+
+    <section class="archived" aria-labelledby="a-h">
+      <div class="sec-head"><div><h2 id="a-h">Archived <span class="mono count">${(DATA.archived || []).length}</span></h2>
+        <p>Hidden from the dashboard and skipped by runs. Your notes are kept. VCs with no public signal for ${DATA.archive_after_days || 60} days are archived automatically after a run (never ones you are in conversation with).</p></div></div>
+      ${(DATA.archived || []).length ? `<div class="card arch-list">${DATA.archived.map((v) => `<div class="arch-row">
+          <div class="who"><b>${esc(v.name)}</b><span>${esc(v.firm)}</span></div>
+          <div class="arch-why"><span class="pill ${v.archive.archived_by === 'rule' ? 'quiet' : 'plain'}">${v.archive.archived_by === 'rule' ? 'Auto-archived' : 'Archived by you'}</span>
+            <small>${esc(v.archive.reason || '')} · ${fmtD(v.archive.archived_at.slice(0, 10))}</small></div>
+          <button class="btn sm" type="button" data-restore="${v.id}">↺ Restore</button></div>`).join('')}</div>`
+        : '<div class="card empty">Nothing archived yet.</div>'}
+    </section>
   </main>`;
 
   renderRows();
@@ -298,6 +309,15 @@ function wire() {
   $('#export').onclick = exportCsv;
   $('#csv').onchange = (e) => importCsv(e.target.files[0]).finally(() => { e.target.value = ''; });
   $('#digest').onclick = sendDigestNow;
+  $$('[data-restore]').forEach((b) => b.onclick = async () => {
+    b.disabled = true; b.textContent = 'Restoring…';
+    try {
+      const v = DATA.archived.find((x) => x.id === +b.dataset.restore);
+      await act({ action: 'restore', id: v.id });
+      await load();
+      toast(`${v.name} is back in the pipeline. The next run will check them again.`);
+    } catch (err) { toast(err.message); b.disabled = false; b.textContent = '↺ Restore'; }
+  });
   $$('[data-filter]').forEach((b) => b.onclick = () => {
     FILTER = FILTER === b.dataset.filter && b.closest('.dist-legend') ? 'all' : b.dataset.filter;
     $$('[data-filter]').forEach((x) => x.setAttribute('aria-pressed', x.dataset.filter === FILTER));
@@ -534,10 +554,29 @@ function openDrawer(id, tab) {
       <div class="locked"><div><span>Last signal date</span><b class="mono">${fmtD(v.last_signal_date)}</b></div>
       <div><span>Follow-up score</span><b class="mono">${v.follow_up_score ?? '—'}</b></div>
       <div><span>Recommended action</span><b>${esc(v.recommended_action || '—')}</b></div>
-      <div><span>Signal summary</span><span style="color:var(--ink)">${esc((v.signal_summary || '—').replace(/ \[firm\]/g, ''))}</span></div></div></section>`;
+      <div><span>Signal summary</span><span style="color:var(--ink)">${esc((v.signal_summary || '—').replace(/ \[firm\]/g, ''))}</span></div></div></section>
+
+    <section class="d-sec"><h3>Remove from pipeline</h3>
+      <p style="margin:0;font-size:13.5px;color:var(--ink-2)">Archiving hides ${esc(v.name.split(' ')[0])} from the dashboard and from future runs. Your notes and history are kept, and you can restore them any time.</p>
+      <div class="mail-acts"><button class="btn danger" type="button" id="d-archive">Archive this VC</button><span id="d-archive-msg" style="font-size:13px;color:var(--muted)"></span></div></section>`;
 
   showDrawer();
   if (d.draft_body) wireDraft(v);
+  $('#d-archive').onclick = async (e) => {
+    const b = e.currentTarget;
+    if (!b.dataset.confirm) { // two-step: the first click asks, the second archives
+      b.dataset.confirm = '1'; b.textContent = `Yes, archive ${v.name.split(' ')[0]}`;
+      $('#d-archive-msg').textContent = 'Click again to confirm.';
+      return;
+    }
+    b.disabled = true; b.textContent = 'Archiving…';
+    try {
+      await act({ action: 'archive', id: v.id });
+      $('#drawer').close();
+      await load();
+      toast(`${v.name} archived. Restore them any time from the Archived list.`);
+    } catch (err) { toast(err.message); b.disabled = false; b.textContent = 'Archive this VC'; }
+  };
   if (tab === 'draft' && d.draft_body) $('#m-body').focus();
   wireFeedback($('#drawer-body'));
 

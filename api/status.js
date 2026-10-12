@@ -7,7 +7,9 @@ export const config = { maxDuration: 10 };
 
 export default ownerRoute(async (req, res) => {
   const [run] = await q(db.from('signal_runs').select('*').neq('trigger', 'single').order('id', { ascending: false }).limit(1));
-  const { count: total } = await db.from('vcs').select('id', { count: 'exact', head: true });
+  const { count: all } = await db.from('vcs').select('id', { count: 'exact', head: true });
+  const { count: archived } = await db.from('vc_archive').select('id', { count: 'exact', head: true }).is('restored_at', null);
+  const total = (all || 0) - (archived || 0);
   const { count: checked } = run
     ? await db.from('vc_checks').select('id', { count: 'exact', head: true }).eq('run_id', run.id)
     : { count: 0 };

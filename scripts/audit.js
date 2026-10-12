@@ -12,11 +12,15 @@ const [run] = runId
   ? await q(db.from('signal_runs').select('*').eq('id', runId))
   : await q(db.from('signal_runs').select('*').neq('trigger', 'single').eq('status', 'done').order('id', { ascending: false }).limit(1));
 const runDay = new Date(Date.parse(run.started_at) + 5.5 * 3_600_000).toISOString().slice(0, 10); // IST date of the run
-const [vcs, checks, signals] = await Promise.all([
+const [allVcs, checks, signals, archive] = await Promise.all([
   q(db.from('vcs').select('*').order('id')),
   q(db.from('vc_checks').select('*').eq('run_id', run.id)),
   q(db.from('signals').select('*').eq('run_id', run.id)),
+  q(db.from('vc_archive').select('vc_id, archived_at, restored_at')),
 ]);
+// VCs archived before this run started were (correctly) not part of it.
+const archivedBefore = new Set(archive.filter((a) => a.archived_at < run.started_at && (!a.restored_at || a.restored_at > run.started_at)).map((a) => a.vc_id));
+const vcs = allVcs.filter((v) => !archivedBefore.has(v.id));
 const checkOf = new Map(checks.map((c) => [c.vc_id, c]));
 const sigOf = new Map();
 for (const s of signals) { if (!sigOf.has(s.vc_id)) sigOf.set(s.vc_id, []); sigOf.get(s.vc_id).push(s); }
