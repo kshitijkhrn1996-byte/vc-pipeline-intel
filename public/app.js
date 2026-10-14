@@ -284,7 +284,7 @@ function renderTop() {
   const crumb = { overview: `Week of ${new Date(Date.now() + 5.5 * 3600000).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })} · ${DATA.vcs.length} VCs tracked`,
     pipeline: 'Drag a card to update your status', investors: `${DATA.vcs.length} VCs · ${c.go + c.nudge} worth contacting`,
     signals: 'Everything VCs did in the last 30 days', archived: 'Hidden from runs · notes kept' }[r];
-  $('#top').innerHTML = `<div><h1>${ROUTES[r]}</h1><div class="crumb">${crumb}</div></div><div class="grow"></div>
+  $('#top').innerHTML = `<div><h1>${ROUTES[r]}</h1><div class="crumb">${crumb} · <span class="sample" title="Status, last contact, history and notes are illustrative sample data for Vikram. Signals, scores and drafts are live.">Sample relationship data</span></div></div><div class="grow"></div>
     <label class="search">${icon('search')}<input id="q" type="search" placeholder="Search VCs, firms, notes" value="${esc(QUERY)}" aria-label="Search"></label>
     <button class="btn" type="button" data-act="digest">${icon('mail')}Email brief</button>
     <button class="btn primary" type="button" data-act="add">${icon('plus')}Add VC</button>`;
@@ -332,7 +332,6 @@ function pageOverview() {
         <div class="hero-num"><b style="color:var(--muted)">${c.quiet}</b><span><span class="stage-dot" style="background:#c3cad5"></span>Quiet, skip this week</span></div>
       </div>
       <div class="dist" aria-hidden="true">${['go', 'nudge', 'hold', 'quiet', 'passed'].map((g) => `<span class="c-${g}" style="flex-grow:${c[g]}"></span>`).join('')}</div>
-      <p>Every recommendation is backed by something the VC did, wrote, said or invested in during the last 30 days, with the link to check it.</p>
       <div class="since"><span class="badge new">${plural(since.actionable, 'VC')} newly worth contacting</span><span class="badge sig">${plural(since.fresh, 'VC')} with new signals</span>
         <span class="badge up">▲ ${since.up} heating up</span><span class="badge down">${since.quiet} went quiet</span></div>
     </section>
@@ -354,12 +353,8 @@ function pageOverview() {
     <section class="card span-8" style="align-self:start">${priorityTable()}</section>
     <aside class="span-4" style="display:grid;gap:16px;align-content:start">${aiBrief()}${runHealth()}</aside>
 
-    <section class="card span-4"><div class="card-h"><div><h2>Score distribution</h2><p>VCs per score band; blue bands clear the outreach line</p></div></div><div class="card-b">${scoreChart()}</div></section>
-    <section class="card span-4"><div class="card-h"><div><h2>Signal types</h2><p>Distinct events in the last 30 days</p></div></div><div class="card-b">${hbars(typeRows, Math.max(...typeRows.map((x) => x.n)))}</div></section>
-    <section class="card span-4"><div class="card-h"><div><h2>How the score works</h2><p>Transparent and reproducible</p></div></div><div class="card-b rules">
-      <p>Each event earns up to 40 points: <b>type</b> (deal 1.0, post 0.8, event 0.7, interview 0.6) × <b>relevance</b> (logistics 1.0, B2B SaaS 0.6, general 0.15) × <b>recency</b> (full for 7 days, fading to zero at 30).</p>
-      <p>One count per event, however many outlets cover it. Off-topic activity adds at most 15, so it never crosses the outreach line of ${THRESHOLD} alone.</p>
-      <p>A pending reply is never chased within 10 days of your last contact.</p></div></section>
+    <section class="card span-6"><div class="card-h"><div><h2>Score distribution</h2><p>VCs per score band; blue bands clear the outreach line</p></div></div><div class="card-b">${scoreChart()}</div></section>
+    <section class="card span-6"><div class="card-h"><div><h2>Signal types</h2><p>Distinct events in the last 30 days</p></div></div><div class="card-b">${hbars(typeRows, Math.max(...typeRows.map((x) => x.n)))}</div></section>
   </div>`;
 }
 function priorityTable() {
@@ -370,11 +365,11 @@ function priorityTable() {
   const rows = pri.filter(f[UI.pri] || f.all).sort((a, b) => (b.follow_up_score ?? 0) - (a.follow_up_score ?? 0));
   return `<div class="card-h"><div><h2>Priority investors</h2><p>Who to act on, why now, and the draft ready to send</p></div></div>
     <div style="padding:12px 18px 4px" class="chips">${chips.map(([k, l]) => `<button type="button" class="chip" data-act="pri" data-key="${k}" aria-pressed="${UI.pri === k}">${l}<span class="n">${pri.filter(f[k]).length}</span></button>`).join('')}</div>
-    <div class="table-wrap"><table class="pri"><thead><tr><th>Investor</th><th>Recommendation</th><th>Score</th><th>Why now</th><th></th></tr></thead><tbody>
+    <div class="table-wrap"><table class="pri"><thead><tr><th>Investor</th><th>Recommendation</th><th title="Each event: type × relevance × recency, up to 40 points. One count per event; off-topic capped at 15. Outreach line: 30.">Score ⓘ</th><th>Why now</th><th></th></tr></thead><tbody>
     ${rows.map((v) => { const e = topEvent(v); return `<tr data-open="${v.id}" tabindex="0">
       <td><div class="who">${logo(v)}<div><b>${esc(short(v.firm))}</b><span>${esc(v.name)} · ${STATUS[v.status].toLowerCase()}</span></div></div></td>
       <td>${pill(v)}</td><td>${scoreCell(v)}</td>
-      <td class="sum">${e ? `<div style="display:flex;gap:6px;align-items:center;margin-bottom:3px">${relTag(e.relevance)}<span class="mono muted" style="font-size:11.5px">${fmtD(e.published)}</span></div><span class="clamp">${esc(clean(e.summary))}</span>` : '<span class="muted">No recent signal</span>'}</td>
+      <td class="sum">${e ? `<div style="display:flex;gap:6px;align-items:center;margin-bottom:3px">${relTag(e.relevance)}<span class="mono muted" style="font-size:11.5px">${fmtD(e.published)}</span></div><span class="clamp1">${esc(clean(e.summary))}</span>` : '<span class="muted">No recent signal</span>'}</td>
       <td>${v.check?.draft_body ? `<button class="btn sm" type="button" data-act="open" data-id="${v.id}" data-tab="draft">${icon('mail')}Draft</button>` : ''}</td></tr>`; }).join('')
     || `<tr><td colspan="5" class="empty">Nothing in this view right now.</td></tr>`}
     </tbody></table></div>`;
@@ -384,7 +379,7 @@ function aiBrief() {
   return `<section class="card"><div class="card-h"><div class="ai-head"><span class="ai-orb">${icon('spark')}</span><div><h2>AI brief</h2><p>Gemini-drafted, evidence-backed next steps</p></div></div></div>
     <div class="card-b brief-list">${recs.map((v) => { const e = topEvent(v); const g = group(v); return `<div class="rec">
       <div class="who">${logo(v, 'sm')}<div><b>${g === 'go' ? 'Reach out to' : 'Nudge'} ${esc(first(v.name))} · ${esc(short(v.firm))}</b><span>Score ${v.follow_up_score} · ${g === 'nudge' ? `last contact ${ago(v.last_contact)}` : 'not contacted yet'}</span></div></div>
-      ${e ? `<div class="why">${esc(clean(e.summary))} <span class="mono muted" style="font-size:11.5px">${fmtD(e.published)}</span></div>` : ''}
+      ${e ? `<div class="why clamp1">${esc(clean(e.summary))}</div>` : ''}
       <div class="acts">${v.check?.draft_body ? `<button class="btn sm primary" type="button" data-act="open" data-id="${v.id}" data-tab="draft">${icon('mail')}Open draft</button>` : ''}
         <button class="btn sm" type="button" data-act="sent" data-id="${v.id}">✓ Mark sent</button></div></div>`; }).join('') || '<p class="muted" style="margin:0">No VC has a strong enough signal right now.</p>'}</div></section>`;
 }
@@ -416,7 +411,7 @@ function kcard(v) {
   return `<article class="kcard" draggable="true" data-id="${v.id}" data-open="${v.id}" tabindex="0" aria-label="${esc(v.name)}, ${esc(short(v.firm))}">
     <div class="top-row"><div class="who">${logo(v)}<div><b>${esc(short(v.firm))}</b><span>${esc(v.name)}</span></div></div><span class="kscore ${s >= THRESHOLD ? 'hi' : s > 0 ? 'mid' : 'lo'}">${s}</span></div>
     <div style="display:flex;gap:6px;flex-wrap:wrap">${pill(v)}${badges(v)}</div>
-    ${e ? `<div class="sig clamp">${esc(clean(e.summary))}</div>` : `<div class="sig muted">No public signal in 30 days</div>`}
+    ${e ? `<div class="sig clamp1">${esc(clean(e.summary))}</div>` : `<div class="sig muted">No public signal in 30 days</div>`}
     <div class="meta"><span>${v.last_contact ? `Contacted ${ago(v.last_contact)}` : 'Never contacted'}</span>${spark(v.trend, 64, 20)}</div></article>`;
 }
 
@@ -685,7 +680,7 @@ function openDrawer(id, tab) {
       <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:13px;color:var(--ink-2)"><span>Score over recent runs</span>${spark(v.trend, 160, 36)}</div>
       <p class="muted" style="margin:0;font-size:12.5px">Checked: ${esc((d.sources_checked || []).join(', ') || '—')} · ${d.items_found ?? 0} items found · ${fmtT(d.checked_at)}</p></section>
 
-    <section class="d-sec"><h3>Your columns · you edit these</h3>
+    <section class="d-sec"><h3>Your columns · you edit these <span class="sample">sample data</span></h3>
       <form id="d-form" class="d-sec">
         <div class="grid2"><label class="field">Status<select id="f-status">${Object.entries(STATUS).map(([k, l]) => `<option value="${k}" ${k === v.status ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
         <label class="field">Last contact<input id="f-last" type="date" value="${esc(v.last_contact || '')}"></label></div>

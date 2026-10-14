@@ -342,3 +342,8 @@ dialog.drawer[open] .drawer-inner { animation: slide .22s cubic-bezier(.2, .8, .
   .hbar { grid-template-columns: 110px minmax(0, 1fr) 28px; }
 }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+/* lighter text density */
+.card-h p { display: none; }
+.clamp1 { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+.sample { display: inline-flex; align-items: center; font: 500 11px var(--f-mono); color: var(--nudge); background: var(--nudge-bg); border-radius: 5px; padding: 0 6px; letter-spacing: 0; text-transform: none; cursor: help; }

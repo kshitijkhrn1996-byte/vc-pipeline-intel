@@ -4,7 +4,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 
 const vcs = JSON.parse(readFileSync(new URL('../data/vcs.json', import.meta.url)));
-const TODAY = Date.parse('2026-10-11');
+const TODAY = Date.parse('2026-10-14');
 const daysAgo = (n) => new Date(TODAY - n * 86_400_000).toISOString().slice(0, 10);
 
 // A plausible two-month pipeline: [status, days since last contact, history, notes]
@@ -25,7 +25,8 @@ const sql = (v) => (v === null || v === undefined || v === '' ? 'null' : `'${Str
 
 const rows = vcs.map((vc, i) => {
   const [status, ago, history, notes] = PLAYBOOK[i % PLAYBOOK.length];
-  const last = ago === null ? null : daysAgo(ago + (i % 3));
+  // Sample contacts fall in the last 5–21 days (the product was built in October).
+  const last = ago === null ? null : daysAgo(5 + Math.round(((ago + (i % 3)) - 4) * 16 / 31));
   const hist = history ? `${last}: ${history}` : '';
   const fullNotes = [notes, vc.portfolio_example ? `Portfolio fit: ${vc.portfolio_example}.` : ''].filter(Boolean).join(' ');
   return `(${[vc.name, vc.firm, vc.thesis, vc.email, vc.website, vc.blog_rss, status, last, hist, fullNotes].map(sql).join(', ')})`;
