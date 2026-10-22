@@ -53,6 +53,7 @@ export async function buildDigest(runId = null) {
 
 // Sends the brief once per run (force=true resends, e.g. the dashboard's "Email me the brief").
 export async function sendDigest(runId, { force = false } = {}) {
+  if (process.env.PIPELINE_PAUSED === 'true') throw new Error('Emails are paused (PIPELINE_PAUSED).');
   if (!process.env.DIGEST_WEBHOOK_URL || !process.env.DIGEST_SECRET) throw new Error('digest email is not set up (DIGEST_WEBHOOK_URL)');
   if (runId && !force) {
     const [run] = await q(db.from('signal_runs').select('digest_sent_at').eq('id', runId));

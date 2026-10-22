@@ -10,6 +10,8 @@ export const config = { maxDuration: 300 };
 export default async function handler(req, res) {
   const isCron = process.env.CRON_SECRET && req.headers.authorization === `Bearer ${process.env.CRON_SECRET}`;
   if (!isCron && !isOwner(req)) return res.status(401).json({ error: 'unauthorised' });
+  // Pause switch: set PIPELINE_PAUSED=true in Vercel to stop all runs (scheduled and manual).
+  if (process.env.PIPELINE_PAUSED === 'true') return res.status(423).json({ error: 'The pipeline is paused. Remove PIPELINE_PAUSED in Vercel to resume.' });
   // Manual runs only from the dashboard's POST, so crawlers following a link can never start one.
   if (!isCron && req.method !== 'POST') return res.status(405).json({ error: 'Use POST to start a run.' });
 
